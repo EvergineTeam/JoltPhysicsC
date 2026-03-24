@@ -772,7 +772,6 @@ static JoltC_PhysicsSettings fromJphPhysicsSettings(const PhysicsSettings& s) {
     r.bodyPairCacheCosMaxDeltaRotationDiv2 = s.mBodyPairCacheCosMaxDeltaRotationDiv2;
     r.contactNormalCosMaxDeltaRotation     = s.mContactNormalCosMaxDeltaRotation;
     r.contactPointPreserveLambdaMaxDistSq  = s.mContactPointPreserveLambdaMaxDistSq;
-    r.internalEdgeRemovalVertexToleranceSq = s.mInternalEdgeRemovalVertexToleranceSq;
     r.numVelocitySteps                     = s.mNumVelocitySteps;
     r.numPositionSteps                     = s.mNumPositionSteps;
     r.minVelocityForRestitution            = s.mMinVelocityForRestitution;
@@ -804,7 +803,6 @@ static PhysicsSettings toJphPhysicsSettings(const JoltC_PhysicsSettings& s) {
     r.mBodyPairCacheCosMaxDeltaRotationDiv2 = s.bodyPairCacheCosMaxDeltaRotationDiv2;
     r.mContactNormalCosMaxDeltaRotation     = s.contactNormalCosMaxDeltaRotation;
     r.mContactPointPreserveLambdaMaxDistSq  = s.contactPointPreserveLambdaMaxDistSq;
-    r.mInternalEdgeRemovalVertexToleranceSq = s.internalEdgeRemovalVertexToleranceSq;
     r.mNumVelocitySteps                     = s.numVelocitySteps;
     r.mNumPositionSteps                     = s.numPositionSteps;
     r.mMinVelocityForRestitution            = s.minVelocityForRestitution;

@@ -611,7 +611,6 @@ typedef struct JoltC_PhysicsSettings {
     float       bodyPairCacheCosMaxDeltaRotationDiv2;
     float       contactNormalCosMaxDeltaRotation;
     float       contactPointPreserveLambdaMaxDistSq;
-    float       internalEdgeRemovalVertexToleranceSq;
     uint32_t    numVelocitySteps;
     uint32_t    numPositionSteps;
     float       minVelocityForRestitution;
