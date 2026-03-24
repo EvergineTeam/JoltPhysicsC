@@ -1,0 +1,37 @@
+﻿# IDE / Editor
+.claude
+memories/
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln
+*.vcxproj.user
+
+# Build outputs
+JoltC/build/
+build/
+out/
+cmake-build-*/
+CMakeUserPresets.json
+
+# Compiled binaries
+*.dll
+*.so
+*.dylib
+*.lib
+*.a
+*.exp
+*.pdb
+*.ilk
+*.obj
+*.o
+
+# Temp analysis files
+*.txt
+!LICENSE
+!README.md
+
+# OS files
+Thumbs.db
+.DS_Store

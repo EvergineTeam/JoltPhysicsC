@@ -1,0 +1,101 @@
+name: Build JoltC Libraries
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: x64
+            cmake-arch: x64
+          - os: ubuntu-latest
+            arch: arm64
+            cmake-arch: aarch64
+          - os: windows-latest
+            arch: x64
+            cmake-arch: x64
+          - os: windows-latest
+            arch: arm64
+            cmake-arch: ARM64
+          - os: macos-latest
+            arch: arm64
+            cmake-arch: arm64
+
+    steps:
+      - name: Checkout JoltPhysicsC
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake
+
+      - name: Install cross-compilation tools (Ubuntu ARM64)
+        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
+        run: |
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      - name: Configure (Linux x64)
+        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'x64'
+        run: |
+          cmake -S JoltC -B JoltC/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DPHYSICS_REPO_ROOT=${{ github.workspace }}/JoltPhysics
+
+      - name: Configure (Linux ARM64)
+        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
+        run: |
+          cmake -S JoltC -B JoltC/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=Linux \
+            -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+            -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
+            -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
+            -DPHYSICS_REPO_ROOT=${{ github.workspace }}/JoltPhysics
+
+      - name: Configure (macOS ARM64)
+        if: matrix.os == 'macos-latest'
+        run: |
+          cmake -S JoltC -B JoltC/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES=${{ matrix.cmake-arch }} \
+            -DPHYSICS_REPO_ROOT=${{ github.workspace }}/JoltPhysics
+
+      - name: Configure (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          cmake -S JoltC -B JoltC/build \
+            -A ${{ matrix.cmake-arch }} \
+            -DPHYSICS_REPO_ROOT=${{ github.workspace }}/JoltPhysics
+
+      - name: Build
+        run: cmake --build JoltC/build --config Release
+
+      - name: Upload JoltC.dll (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: joltc-win-${{ matrix.arch }}
+          path: JoltC/build/**/*.dll
+
+      - name: Upload libJoltC.so (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: joltc-linux-${{ matrix.arch }}
+          path: JoltC/build/**/*.so
+
+      - name: Upload libJoltC.dylib (macOS)
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: joltc-osx-${{ matrix.arch }}
+          path: JoltC/build/**/*.dylib
