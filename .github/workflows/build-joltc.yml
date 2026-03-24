@@ -28,8 +28,9 @@ jobs:
     steps:
       - name: Checkout JoltPhysicsC
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
+
+      - name: Fetch submodules
+        run: git submodule update --init --recursive
 
       - name: Install dependencies (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
