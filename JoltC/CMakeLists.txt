@@ -16,6 +16,9 @@ endif()
 file(TO_CMAKE_PATH "${PHYSICS_REPO_ROOT}" PHYSICS_REPO_ROOT)
 include(${PHYSICS_REPO_ROOT}/Jolt/Jolt.cmake)
 
+# Ensure Jolt static lib is built with PIC (required for linking into shared lib on Linux)
+set_target_properties(Jolt PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 # ============================================================================
 #  JoltC shared library
 # ============================================================================
