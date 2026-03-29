@@ -13,6 +13,7 @@ option(JOLTC_DOUBLE_PRECISION "Use double precision for world-space positions" O
 if(NOT DEFINED PHYSICS_REPO_ROOT)
     set(PHYSICS_REPO_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../JoltPhysics)
 endif()
+file(TO_CMAKE_PATH "${PHYSICS_REPO_ROOT}" PHYSICS_REPO_ROOT)
 include(${PHYSICS_REPO_ROOT}/Jolt/Jolt.cmake)
 
 # ============================================================================
