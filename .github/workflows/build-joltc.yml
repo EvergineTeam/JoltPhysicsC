@@ -59,11 +59,10 @@ jobs:
 
       - name: Configure (Windows)
         if: matrix.os == 'windows-latest'
-        shell: bash
-        run: |
-          cmake -S JoltC -B JoltC/build \
-            -A ${{ matrix.cmake-arch }} \
-            -DPHYSICS_REPO_ROOT=${{ github.workspace }}/JoltPhysics
+        run: >
+          cmake -S JoltC -B JoltC/build
+          -A ${{ matrix.cmake-arch }}
+          -DPHYSICS_REPO_ROOT="${{ github.workspace }}/JoltPhysics"
 
       - name: Build
         run: cmake --build JoltC/build --config Release
