@@ -41,8 +41,9 @@ static JoltC_Constraint* createTwoBody(
     const TwoBodyConstraintSettings& settings)
 {
     PhysicsSystem& ps = *system->ptr;
+    JoltC_BodyID ids[2] = { b1, b2 };
     BodyLockMultiWrite lock(ps.GetBodyLockInterface(),
-                            reinterpret_cast<const BodyID*>(&b1), 2);
+                            reinterpret_cast<const BodyID*>(ids), 2);
     Body* body1 = lock.GetBody(0);
     Body* body2 = lock.GetBody(1);
     if (!body1 || !body2)
