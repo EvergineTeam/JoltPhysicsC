@@ -9,21 +9,47 @@ jobs:
     strategy:
       matrix:
         include:
+          # ── Desktop / Server ──────────────────────────────────────────
           - os: ubuntu-latest
+            platform: linux
             arch: x64
             cmake-arch: x64
           - os: ubuntu-latest
+            platform: linux
             arch: arm64
             cmake-arch: aarch64
           - os: windows-latest
+            platform: win
             arch: x64
             cmake-arch: x64
           - os: windows-latest
+            platform: win
             arch: arm64
             cmake-arch: ARM64
           - os: macos-latest
+            platform: osx
             arch: arm64
             cmake-arch: arm64
+          # ── Android ───────────────────────────────────────────────────
+          - os: ubuntu-latest
+            platform: android
+            arch: arm
+            android-abi: armeabi-v7a
+          - os: ubuntu-latest
+            platform: android
+            arch: arm64
+            android-abi: arm64-v8a
+          # ── iOS ───────────────────────────────────────────────────────
+          - os: macos-latest
+            platform: ios
+            arch: arm64
+          - os: macos-latest
+            platform: iossimulator
+            arch: arm64
+          # ── WebAssembly ───────────────────────────────────────────────
+          - os: ubuntu-latest
+            platform: browser-wasm
+            arch: wasm
 
     steps:
       - name: Checkout JoltPhysicsC
@@ -32,26 +58,34 @@ jobs:
       - name: Fetch submodules
         run: git submodule update --init --recursive
 
-      - name: Install dependencies (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+      # ── Toolchain setup ───────────────────────────────────────────────
+      - name: Install dependencies (Ubuntu native)
+        if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake
 
       - name: Install cross-compilation tools (Ubuntu ARM64)
-        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
+        if: matrix.platform == 'linux' && matrix.arch == 'arm64'
         run: |
           sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
+      - name: Setup Emscripten SDK
+        if: matrix.platform == 'browser-wasm'
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.56
+
+      # ── Configure ─────────────────────────────────────────────────────
       - name: Configure (Linux x64)
-        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'x64'
+        if: matrix.platform == 'linux' && matrix.arch == 'x64'
         run: |
           cmake -S JoltC -B JoltC/build \
             -DCMAKE_BUILD_TYPE=Release \
             -DPHYSICS_REPO_ROOT=${{ github.workspace }}/JoltPhysics
 
       - name: Configure (Linux ARM64)
-        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
+        if: matrix.platform == 'linux' && matrix.arch == 'arm64'
         run: |
           cmake -S JoltC -B JoltC/build \
             -DCMAKE_BUILD_TYPE=Release \
@@ -62,7 +96,7 @@ jobs:
             -DPHYSICS_REPO_ROOT=${{ github.workspace }}/JoltPhysics
 
       - name: Configure (macOS ARM64)
-        if: matrix.os == 'macos-latest'
+        if: matrix.platform == 'osx'
         run: |
           cmake -S JoltC -B JoltC/build \
             -DCMAKE_BUILD_TYPE=Release \
@@ -70,32 +104,99 @@ jobs:
             -DPHYSICS_REPO_ROOT=${{ github.workspace }}/JoltPhysics
 
       - name: Configure (Windows)
-        if: matrix.os == 'windows-latest'
+        if: matrix.platform == 'win'
         run: >
           cmake -S JoltC -B JoltC/build
           -A ${{ matrix.cmake-arch }}
           -DPHYSICS_REPO_ROOT="${{ github.workspace }}/JoltPhysics"
 
+      - name: Configure (Android)
+        if: matrix.platform == 'android'
+        run: |
+          cmake -S JoltC -B JoltC/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=${{ matrix.android-abi }} \
+            -DANDROID_PLATFORM=android-21 \
+            -DANDROID_STL=c++_static \
+            -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON \
+            -DPHYSICS_REPO_ROOT=${{ github.workspace }}/JoltPhysics
+
+      - name: Configure (iOS device)
+        if: matrix.platform == 'ios'
+        run: |
+          cmake -S JoltC -B JoltC/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
+            -DJOLTC_STATIC=ON \
+            -DPHYSICS_REPO_ROOT=${{ github.workspace }}/JoltPhysics
+
+      - name: Configure (iOS simulator)
+        if: matrix.platform == 'iossimulator'
+        run: |
+          cmake -S JoltC -B JoltC/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_SYSROOT=iphonesimulator \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
+            -DJOLTC_STATIC=ON \
+            -DPHYSICS_REPO_ROOT=${{ github.workspace }}/JoltPhysics
+
+      - name: Configure (WebAssembly)
+        if: matrix.platform == 'browser-wasm'
+        run: |
+          cmake -S JoltC -B JoltC/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake \
+            -DJOLTC_STATIC=ON \
+            -DPHYSICS_REPO_ROOT=${{ github.workspace }}/JoltPhysics
+
+      # ── Build ─────────────────────────────────────────────────────────
       - name: Build
         run: cmake --build JoltC/build --config Release
 
+      # ── Upload artifacts ──────────────────────────────────────────────
       - name: Upload JoltC.dll (Windows)
-        if: matrix.os == 'windows-latest'
+        if: matrix.platform == 'win'
         uses: actions/upload-artifact@v4
         with:
           name: joltc-win-${{ matrix.arch }}
           path: JoltC/build/**/*.dll
 
       - name: Upload libJoltC.so (Linux)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.platform == 'linux'
         uses: actions/upload-artifact@v4
         with:
           name: joltc-linux-${{ matrix.arch }}
           path: JoltC/build/**/*.so
 
       - name: Upload libJoltC.dylib (macOS)
-        if: matrix.os == 'macos-latest'
+        if: matrix.platform == 'osx'
         uses: actions/upload-artifact@v4
         with:
           name: joltc-osx-${{ matrix.arch }}
           path: JoltC/build/**/*.dylib
+
+      - name: Upload libJoltC.so (Android)
+        if: matrix.platform == 'android'
+        uses: actions/upload-artifact@v4
+        with:
+          name: joltc-android-${{ matrix.arch }}
+          path: JoltC/build/**/*.so
+
+      - name: Upload libJoltC.a (iOS)
+        if: matrix.platform == 'ios' || matrix.platform == 'iossimulator'
+        uses: actions/upload-artifact@v4
+        with:
+          name: joltc-${{ matrix.platform }}-${{ matrix.arch }}
+          path: JoltC/build/**/*.a
+
+      - name: Upload libJoltC.a (WebAssembly)
+        if: matrix.platform == 'browser-wasm'
+        uses: actions/upload-artifact@v4
+        with:
+          name: joltc-browser-wasm
+          path: JoltC/build/**/*.a

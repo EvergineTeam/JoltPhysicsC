@@ -6,6 +6,7 @@ project(JoltC VERSION 1.0.0 LANGUAGES CXX)
 #  Options
 # ============================================================================
 option(JOLTC_DOUBLE_PRECISION "Use double precision for world-space positions" OFF)
+option(JOLTC_STATIC "Build JoltC as a static library instead of shared" OFF)
 
 # ============================================================================
 #  Build Jolt as a static library (we wrap it)
@@ -20,7 +21,7 @@ include(${PHYSICS_REPO_ROOT}/Jolt/Jolt.cmake)
 set_target_properties(Jolt PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # ============================================================================
-#  JoltC shared library
+#  JoltC library
 # ============================================================================
 set(JOLTC_SRC
     src/errors.cpp
@@ -38,10 +39,14 @@ set(JOLTC_SRC
     src/skeleton.cpp
 )
 
-add_library(JoltC SHARED ${JOLTC_SRC})
+if (JOLTC_STATIC)
+    add_library(JoltC STATIC ${JOLTC_SRC})
+else()
+    add_library(JoltC SHARED ${JOLTC_SRC})
+    target_compile_definitions(JoltC PRIVATE JOLTC_EXPORTS)
+endif()
 
 # Compile definitions
-target_compile_definitions(JoltC PRIVATE JOLTC_EXPORTS)
 if (JOLTC_DOUBLE_PRECISION)
     target_compile_definitions(JoltC PUBLIC JOLTC_DOUBLE_PRECISION)
     target_compile_definitions(JoltC PRIVATE JPH_DOUBLE_PRECISION)
