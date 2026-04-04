@@ -115,7 +115,7 @@ jobs:
         run: |
           cmake -S JoltC -B JoltC/build \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
             -DANDROID_ABI=${{ matrix.android-abi }} \
             -DANDROID_PLATFORM=android-21 \
             -DANDROID_STL=c++_static \
