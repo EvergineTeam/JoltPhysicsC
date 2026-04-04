@@ -53,7 +53,7 @@ jobs:
 
     steps:
       - name: Checkout JoltPhysicsC
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Fetch submodules
         run: git submodule update --init --recursive
@@ -161,42 +161,42 @@ jobs:
       # ── Upload artifacts ──────────────────────────────────────────────
       - name: Upload JoltC.dll (Windows)
         if: matrix.platform == 'win'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: joltc-win-${{ matrix.arch }}
           path: JoltC/build/**/*.dll
 
       - name: Upload libJoltC.so (Linux)
         if: matrix.platform == 'linux'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: joltc-linux-${{ matrix.arch }}
           path: JoltC/build/**/*.so
 
       - name: Upload libJoltC.dylib (macOS)
         if: matrix.platform == 'osx'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: joltc-osx-${{ matrix.arch }}
           path: JoltC/build/**/*.dylib
 
       - name: Upload libJoltC.so (Android)
         if: matrix.platform == 'android'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: joltc-android-${{ matrix.arch }}
           path: JoltC/build/**/*.so
 
       - name: Upload libJoltC.a (iOS)
         if: matrix.platform == 'ios' || matrix.platform == 'iossimulator'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: joltc-${{ matrix.platform }}-${{ matrix.arch }}
           path: JoltC/build/**/*.a
 
       - name: Upload libJoltC.a (WebAssembly)
         if: matrix.platform == 'browser-wasm'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: joltc-browser-wasm
           path: JoltC/build/**/*.a
