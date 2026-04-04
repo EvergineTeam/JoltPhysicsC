@@ -93,8 +93,10 @@ install(DIRECTORY include/JoltC
     FILES_MATCHING PATTERN "*.h"
 )
 
-install(EXPORT JoltCExport
-    FILE JoltCConfig.cmake
-    NAMESPACE JoltC::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/JoltC
-)
+if (NOT JOLTC_STATIC)
+    install(EXPORT JoltCExport
+        FILE JoltCConfig.cmake
+        NAMESPACE JoltC::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/JoltC
+    )
+endif()
