@@ -158,6 +158,35 @@ jobs:
       - name: Build
         run: cmake --build JoltC/build --config Release
 
+      # ── Merge static libraries ────────────────────────────────────────
+      - name: Merge static libraries (iOS)
+        if: matrix.platform == 'ios' || matrix.platform == 'iossimulator'
+        run: |
+          JOLTC=$(find JoltC/build -name 'libJoltC.a' | head -1)
+          JOLT=$(find JoltC/build -name 'libJolt.a' | head -1)
+          DIR=$(dirname "$JOLTC")
+          libtool -static -o "$DIR/libJoltC_merged.a" "$JOLTC" "$JOLT"
+          mv "$DIR/libJoltC_merged.a" "$JOLTC"
+          rm "$JOLT"
+
+      - name: Merge static libraries (WebAssembly)
+        if: matrix.platform == 'browser-wasm'
+        run: |
+          JOLTC=$(find JoltC/build -name 'libJoltC.a' | head -1)
+          JOLT=$(find JoltC/build -name 'libJolt.a' | head -1)
+          DIR=$(dirname "$JOLTC")
+          LLVM_AR="$EMSDK/upstream/bin/llvm-ar"
+          cat > /tmp/merge.mri <<EOF
+          create $DIR/libJoltC_merged.a
+          addlib $JOLTC
+          addlib $JOLT
+          save
+          end
+          EOF
+          "$LLVM_AR" -M < /tmp/merge.mri
+          mv "$DIR/libJoltC_merged.a" "$JOLTC"
+          rm "$JOLT"
+
       # ── Upload artifacts ──────────────────────────────────────────────
       - name: Upload JoltC.dll (Windows)
         if: matrix.platform == 'win'
