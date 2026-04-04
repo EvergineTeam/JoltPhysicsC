@@ -2,15 +2,21 @@
 
 C bindings for [Jolt Physics](https://github.com/jrouwe/JoltPhysics) — a fast, modern 3D physics engine.
 
-JoltPhysicsC wraps the Jolt Physics C++ API into a flat C API exposed as a shared library (`JoltC.dll`, `libJoltC.so`, `libJoltC.dylib`). It is primarily designed to be consumed by [JoltPhysics.NET](https://github.com/EvergineTeam/JoltPhysics.NET), the C# binding used in [Evergine](https://evergine.com).
+JoltPhysicsC wraps the Jolt Physics C++ API into a flat C API exposed as a shared or static library. It is primarily designed to be consumed by [JoltPhysics.NET](https://github.com/EvergineTeam/JoltPhysics.NET), the C# binding used in [Evergine](https://evergine.com).
 
 ## Supported Platforms
 
-| Platform | Architecture | Artifact |
-|---|---|---|
-| Windows | x64, ARM64 | `JoltC.dll` |
-| Linux | x64, ARM64 | `libJoltC.so` |
-| macOS | ARM64 | `libJoltC.dylib` |
+| Platform | Architecture | Artifact | Library type |
+|---|---|---|---|
+| Windows | x64, ARM64 | `JoltC.dll` | Shared |
+| Linux | x64, ARM64 | `libJoltC.so` | Shared |
+| macOS | ARM64 | `libJoltC.dylib` | Shared |
+| Android | arm, arm64 | `libJoltC.so` | Shared |
+| iOS | ARM64 | `libJoltC.a` | Static |
+| iOS Simulator | ARM64 | `libJoltC.a` | Static |
+| WebAssembly | wasm | `libJoltC.a` | Static |
+
+> **Note:** On iOS and WebAssembly the Jolt engine and the C wrapper are merged into a single `libJoltC.a` static archive.
 
 ## Building
 
@@ -52,10 +58,42 @@ cmake -S JoltC -B JoltC/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTUR
 cmake --build JoltC/build
 ```
 
+**Android** (requires the NDK)
+```bash
+cmake -S JoltC -B JoltC/build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+  -DANDROID_ABI=arm64-v8a \
+  -DANDROID_PLATFORM=android-21 \
+  -DANDROID_STL=c++_static
+cmake --build JoltC/build
+```
+
+**iOS**
+```bash
+cmake -S JoltC -B JoltC/build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_SYSTEM_NAME=iOS \
+  -DCMAKE_OSX_ARCHITECTURES=arm64 \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
+  -DJOLTC_STATIC=ON
+cmake --build JoltC/build
+```
+
+**WebAssembly** (requires the Emscripten SDK)
+```bash
+cmake -S JoltC -B JoltC/build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake \
+  -DJOLTC_STATIC=ON
+cmake --build JoltC/build
+```
+
 ### CMake Options
 
 | Option | Default | Description |
 |---|---|---|
+| `JOLTC_STATIC` | `OFF` | Build as a static library instead of shared |
 | `JOLTC_DOUBLE_PRECISION` | `OFF` | Use double precision for world-space positions |
 | `PHYSICS_REPO_ROOT` | `../JoltPhysics` | Path to the Jolt Physics source tree |
 
