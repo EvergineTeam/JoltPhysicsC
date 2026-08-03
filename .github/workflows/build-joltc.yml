@@ -1,60 +1,115 @@
 name: Build JoltC Libraries
 
+# Runs on every change, not only when somebody remembers to dispatch it. Ten legs is not
+# cheap, but this repository is where a JoltPhysics bump lands, and a bump that compiles on
+# three platforms and fails on the other seven is the normal outcome of a bump -- knowing
+# that at pull-request time is the entire point.
 on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+    inputs:
+      release-tag:
+        description: 'Publish a release at this tag with the libraries attached'
+        required: false
+        type: string
+        default: ''
   workflow_dispatch:
+    inputs:
+      release-tag:
+        description: >-
+          Publish a release at this tag with the ten libraries attached, e.g. v5.5.0.
+          Leave empty to build and test only. Use the JoltPhysics version this wrapper
+          targets, so the tag answers "which Jolt is this?" without chasing a submodule.
+        required: false
+        type: string
+        default: ''
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
+      # Every leg reports. A bump usually breaks a subset, and cancelling the rest at the
+      # first failure hides how much of the subset there is.
+      fail-fast: false
       matrix:
         include:
           # ── Desktop / Server ──────────────────────────────────────────
+          # `rid` is the .NET runtime identifier this library ships under in
+          # JoltPhysics.NET. Declared rather than derived: the mapping from platform+arch
+          # is not uniform (browser-wasm has no arch segment, iossimulator does), and a
+          # wrong folder name is the kind of mistake that surfaces as a load failure in a
+          # consumer's application.
+          # `run-tests` is only true where the binary can execute on the runner that built
+          # it. The cross-compiled legs build but cannot run.
           - os: ubuntu-latest
             platform: linux
             arch: x64
             cmake-arch: x64
+            rid: linux-x64
+            run-tests: true
           - os: ubuntu-latest
             platform: linux
             arch: arm64
             cmake-arch: aarch64
+            rid: linux-arm64
+            run-tests: false
           - os: windows-latest
             platform: win
             arch: x64
             cmake-arch: x64
+            rid: win-x64
+            run-tests: true
           - os: windows-latest
             platform: win
             arch: arm64
             cmake-arch: ARM64
+            rid: win-arm64
+            run-tests: false
           - os: macos-latest
             platform: osx
             arch: arm64
             cmake-arch: arm64
+            rid: osx-arm64
+            run-tests: true
           # ── Android ───────────────────────────────────────────────────
           - os: ubuntu-latest
             platform: android
             arch: arm
             android-abi: armeabi-v7a
+            rid: android-arm
+            run-tests: false
           - os: ubuntu-latest
             platform: android
             arch: arm64
             android-abi: arm64-v8a
+            rid: android-arm64
+            run-tests: false
           # ── iOS ───────────────────────────────────────────────────────
           - os: macos-latest
             platform: ios
             arch: arm64
+            rid: ios-arm64
+            run-tests: false
           - os: macos-latest
             platform: iossimulator
             arch: arm64
+            rid: iossimulator-arm64
+            run-tests: false
           # ── WebAssembly ───────────────────────────────────────────────
           - os: ubuntu-latest
             platform: browser-wasm
             arch: wasm
+            rid: browser-wasm
+            run-tests: false
 
     steps:
       - name: Checkout JoltPhysicsC
         uses: actions/checkout@v5
 
+      # Separate from checkout on purpose: `submodules: recursive` on the checkout action
+      # has failed authentication on Windows runners here.
       - name: Fetch submodules
         run: git submodule update --init --recursive
 
@@ -82,6 +137,7 @@ jobs:
         run: |
           cmake -S JoltC -B JoltC/build \
             -DCMAKE_BUILD_TYPE=Release \
+            -DJOLTC_BUILD_TESTS=${{ matrix.run-tests && 'ON' || 'OFF' }} \
             -DPHYSICS_REPO_ROOT=${{ github.workspace }}/JoltPhysics
 
       - name: Configure (Linux ARM64)
@@ -101,6 +157,7 @@ jobs:
           cmake -S JoltC -B JoltC/build \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_ARCHITECTURES=${{ matrix.cmake-arch }} \
+            -DJOLTC_BUILD_TESTS=${{ matrix.run-tests && 'ON' || 'OFF' }} \
             -DPHYSICS_REPO_ROOT=${{ github.workspace }}/JoltPhysics
 
       - name: Configure (Windows)
@@ -108,6 +165,7 @@ jobs:
         run: >
           cmake -S JoltC -B JoltC/build
           -A ${{ matrix.cmake-arch }}
+          -DJOLTC_BUILD_TESTS=${{ matrix.run-tests && 'ON' || 'OFF' }}
           -DPHYSICS_REPO_ROOT="${{ github.workspace }}/JoltPhysics"
 
       - name: Configure (Android)
@@ -158,6 +216,14 @@ jobs:
       - name: Build
         run: cmake --build JoltC/build --config Release
 
+      # ── Test ──────────────────────────────────────────────────────────
+      # Eleven suites of C tests have existed in this repository since March and no CI has
+      # ever run them: they were a standalone CMake project linking a hardcoded
+      # ../build/Release/JoltC.lib. This is the signal that a bump did not merely compile.
+      - name: Test
+        if: matrix.run-tests
+        run: ctest --test-dir JoltC/build --build-config Release --output-on-failure --no-tests=error
+
       # ── Merge static libraries ────────────────────────────────────────
       - name: Merge static libraries (iOS)
         if: matrix.platform == 'ios' || matrix.platform == 'iossimulator'
@@ -187,45 +253,91 @@ jobs:
           mv "$DIR/libJoltC_merged.a" "$JOLTC"
           rm "$JOLT"
 
-      # ── Upload artifacts ──────────────────────────────────────────────
-      - name: Upload JoltC.dll (Windows)
-        if: matrix.platform == 'win'
-        uses: actions/upload-artifact@v5
-        with:
-          name: joltc-win-${{ matrix.arch }}
-          path: JoltC/build/**/*.dll
+      # ── Stage at the path the consumer expects ────────────────────────
+      # Laid out as runtimes/<rid>/native/ here rather than remapped later, so unpacking the
+      # artifact into JoltPhysics.NET *is* the mapping. The previous globs
+      # (JoltC/build/**/*.dll) also matched anything else of that extension in the tree,
+      # which is a trap the moment a second copy appears.
+      - name: Stage library
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ matrix.platform }}" in
+            win)                 name=JoltC.dll ;;
+            osx)                 name=libJoltC.dylib ;;
+            linux|android)       name=libJoltC.so ;;
+            ios|iossimulator|browser-wasm) name=libJoltC.a ;;
+            *) echo "::error::no library name for platform ${{ matrix.platform }}"; exit 1 ;;
+          esac
 
-      - name: Upload libJoltC.so (Linux)
-        if: matrix.platform == 'linux'
-        uses: actions/upload-artifact@v5
-        with:
-          name: joltc-linux-${{ matrix.arch }}
-          path: JoltC/build/**/*.so
+          found=$(find JoltC/build -name "$name" -type f | head -1)
+          if [ -z "$found" ]; then
+            echo "::error::built $name not found under JoltC/build"
+            find JoltC/build -maxdepth 3 -type f \( -name '*.dll' -o -name '*.so' -o -name '*.dylib' -o -name '*.a' \)
+            exit 1
+          fi
 
-      - name: Upload libJoltC.dylib (macOS)
-        if: matrix.platform == 'osx'
-        uses: actions/upload-artifact@v5
-        with:
-          name: joltc-osx-${{ matrix.arch }}
-          path: JoltC/build/**/*.dylib
+          dest="staging/runtimes/${{ matrix.rid }}/native"
+          mkdir -p "$dest"
+          cp "$found" "$dest/$name"
+          echo "staged $found -> $dest/$name"
 
-      - name: Upload libJoltC.so (Android)
-        if: matrix.platform == 'android'
+      - name: Upload library
         uses: actions/upload-artifact@v5
         with:
-          name: joltc-android-${{ matrix.arch }}
-          path: JoltC/build/**/*.so
+          name: joltc-${{ matrix.rid }}
+          path: staging
+          if-no-files-found: error
 
-      - name: Upload libJoltC.a (iOS)
-        if: matrix.platform == 'ios' || matrix.platform == 'iossimulator'
-        uses: actions/upload-artifact@v5
-        with:
-          name: joltc-${{ matrix.platform }}-${{ matrix.arch }}
-          path: JoltC/build/**/*.a
+  # ── Release ─────────────────────────────────────────────────────────────
+  # Artifacts expire; release assets do not. Every one of the 42 artifacts this workflow
+  # produced before today has already expired, which is why the binaries reached
+  # JoltPhysics.NET by hand and nothing recorded which revision they came from.
+  release:
+    needs: build
+    if: inputs.release-tag != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
 
-      - name: Upload libJoltC.a (WebAssembly)
-        if: matrix.platform == 'browser-wasm'
-        uses: actions/upload-artifact@v5
+      - name: Collect the built libraries
+        uses: actions/download-artifact@v5
         with:
-          name: joltc-browser-wasm
-          path: JoltC/build/**/*.a
+          pattern: joltc-*
+          path: assets
+
+      # One archive per runtime identifier, each already holding runtimes/<rid>/native/.
+      # A consumer unpacks it over its tree and is done.
+      - name: Pack one archive per runtime identifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          for dir in assets/joltc-*/; do
+            rid=$(basename "$dir" | sed 's/^joltc-//')
+            (cd "$dir" && zip -qr "$GITHUB_WORKSPACE/release/joltc-$rid.zip" runtimes)
+            echo "packed joltc-$rid.zip"
+          done
+          ls -la release/
+
+          count=$(ls release/*.zip | wc -l)
+          if [ "$count" -ne 10 ]; then
+            echo "::error::expected 10 archives, got $count. A platform is missing."
+            exit 1
+          fi
+
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release-tag }}
+          name: ${{ inputs.release-tag }}
+          body: |
+            JoltC wrapping JoltPhysics `${{ inputs.release-tag }}`.
+
+            Ten libraries, one per runtime identifier. Each archive contains
+            `runtimes/<rid>/native/`, so unpacking it over a .NET binding repository puts
+            the library where the package expects it.
+          files: release/*.zip
+          fail_on_unmatched_files: true

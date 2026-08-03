@@ -1,0 +1,36 @@
+# Binding manifest — see https://github.com/EvergineTeam/Evergine.Bindings
+# Schema: https://github.com/EvergineTeam/Evergine.Bindings/blob/main/binding.schema.json
+toolbox: 1.17.0
+
+# This repository is not a binding: it produces no NuGet package and runs no C# generator.
+# It is the C layer that JoltPhysics.NET binds to, and it carries a manifest for one reason
+# -- so the toolbox can answer "has upstream moved?" here with the same machinery it uses
+# everywhere else, rather than a second implementation of release resolution.
+upstream:
+  kind: git-submodule
+  language: cpp
+  project: https://github.com/jrouwe/JoltPhysics
+  version-from: git-release
+
+  release:
+    repo: jrouwe/JoltPhysics
+    # Stable only. JoltPhysics ships two to four releases a year and its main branch is
+    # where the solver gets rewritten; tracking it would mean porting a moving target.
+    track: stable
+    current: v5.5.0
+
+  # report-only, deliberately. Moving this pointer is not a mechanical edit here: there is
+  # no generator, so a C++ API change becomes a compile error that somebody -- or the
+  # cpp-wrapper-porter agent -- has to resolve by hand in JoltC/src. The agent bumps the
+  # submodule itself, inside its own pull request, once it has something that compiles and
+  # passes the tests.
+  bump: report-only
+
+  sources:
+    - repo: jrouwe/JoltPhysics
+      path: JoltPhysics
+      format: c-header
+
+# NOTE — JOLTC_JOLT_VERSION in JoltC/include/JoltC/common.h must agree with
+# release.current. It is the only version statement a consumer can read without cloning
+# this repository, and JoltPhysics.NET has no other way to say which Jolt it binds to.
