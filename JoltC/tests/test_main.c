@@ -150,6 +150,12 @@ int main(int argc, char* argv[])
     printf("\n[SUITE] ShapeProperties\n");
     run_shape_props_tests();
 
+    printf("\n[SUITE] SkeletonExtra\n");
+    run_skeleton_extra_tests();
+
+    printf("\n[SUITE] VehicleExtra\n");
+    run_vehicle_extra_tests();
+
     JoltC_Shutdown();
 
     printf("\n=== Results: %d/%d passed, %d failed ===\n",

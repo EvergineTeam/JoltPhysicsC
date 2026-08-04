@@ -30,6 +30,8 @@ add_executable(JoltC_Tests
     test_math_roundtrip.c
     test_character_extra.c
     test_shape_props.c
+    test_skeleton_extra.c
+    test_vehicle_extra.c
 )
 
 # The target carries its own public include directory, so nothing here needs to know where
