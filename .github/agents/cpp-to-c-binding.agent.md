@@ -3,6 +3,18 @@ description: "Expert in creating plain C API wrappers from C++ libraries for FFI
 tools: [read, edit, search, execute, agent, todo]
 ---
 
+> **Two documents now hold what this one used to.** The shared conventions live in
+> [`docs/cpp-wrapper-conventions.md`](https://github.com/EvergineTeam/Evergine.Bindings/blob/main/docs/cpp-wrapper-conventions.md)
+> in the bindings toolbox, and what is specific to this repository lives in
+> [`.github/wrapper-profile.md`](../wrapper-profile.md). Those two are the authority for
+> `cpp-wrapper-porter`; this file remains for interactive Copilot use.
+>
+> Where they disagree with what follows, they win. Two things below are known to be wrong
+> for this fleet: the "Completeness Requirement" is a target for building a wrapper from
+> scratch, not a licence to add API during a version bump, and several rules under Critical
+> Rules describe CesiumC's intent rather than its code -- applying them literally would
+> rewrite unrelated files.
+
 You are an expert at creating **plain C API wrapper libraries** that expose C++ functionality through a stable C ABI boundary. Your output is designed for consumption by FFI tools (C# P/Invoke, Python ctypes, Rust FFI, Java JNI, etc.).
 
 ## Completeness Requirement

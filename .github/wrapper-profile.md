@@ -1,0 +1,119 @@
+# JoltPhysicsC wrapper profile
+
+What is specific to this repository. The shared half is
+[`docs/cpp-wrapper-conventions.md`](https://github.com/EvergineTeam/Evergine.Bindings/blob/main/docs/cpp-wrapper-conventions.md)
+in the toolbox, and `cpp-wrapper-porter` reads both.
+
+That document describes how wrappers here are written. **It does not authorise rewriting
+this one.** A bump repairs what upstream broke; anything else belongs in a separate change.
+
+## Identifiers
+
+| | |
+|---|---|
+| Function naming | `JoltC_<Type>_<Method>`, PascalCase, no domain segment |
+| Export macro | `JOLTC_API`, gated on `JOLTC_EXPORTS` |
+| Error macros | `TRY_BEGIN` / `TRY_END`, unprefixed |
+| Last-error accessors | `JoltC_GetLastError`, `JoltC_ClearLastError` |
+| Boolean | `typedef int JoltC_Bool`, with `JOLTC_TRUE` and `JOLTC_FALSE` |
+| Converters | **Type-suffixed**: `toJphVec3`, `fromJphRVec3` |
+
+The converters are suffixed rather than overloaded for a specific reason: with single
+precision `RVec3` is a typedef of `Vec3`, so overloads on both collapse into a redefinition,
+and the build breaks somewhere unrelated to the change that caused it.
+
+## Overloads
+
+**Numeric suffixes**: `_Create`, `_Create2`, `_Create3`. If upstream adds an overload, the
+next free number is the answer here.
+
+(CesiumC does the opposite — semantic suffixes like `_create_from_url`. Do not carry a habit
+across from one profile to the other.)
+
+## Paths
+
+| | |
+|---|---|
+| Public headers | `JoltC/include/JoltC/` |
+| Implementation | `JoltC/src/` |
+| Tests | `JoltC/tests/` |
+| Build | `JoltC/CMakeLists.txt` |
+| Upstream submodule | `JoltPhysics/` |
+
+## Scope contract
+
+**Exhaustive.** This wrapper aims to cover the whole public C++ surface, with
+`amerkoleci/joltc` as the reference for what that means in practice. Around 1,280 exported
+functions today.
+
+That said, the porter does not add API. Its job is repair plus a report; the exhaustiveness
+target is what a human uses when deciding whether to accept the report.
+
+## Applying a bump
+
+One edit: move the `JoltPhysics/` submodule to the new tag. No dependency manifest, no
+baseline, no list of upstream libraries — this repository has no external dependencies and
+includes `Jolt/Jolt.cmake` directly.
+
+Two things that follow from including `Jolt.cmake` rather than upstream's `CMakeLists.txt`:
+
+- **Upstream's `option()` declarations never run**, so its defaults do not apply here. The
+  four compute backends and the library type are pinned explicitly in `JoltC/CMakeLists.txt`
+  for that reason. The set of `JPH_*` variables `Jolt.cmake` reads grew from 3 to 11 between
+  5.5.0 and 5.6.0, so **check what a new release added to that set** and pin anything that
+  changes what gets built.
+- A new release may expect a variable nothing here defines, and CMake reads an undefined
+  variable as false rather than complaining.
+
+## Building and testing
+
+```bash
+cmake -S JoltC -B JoltC/build -DCMAKE_BUILD_TYPE=Release -DJOLTC_BUILD_TESTS=ON \
+  -DPHYSICS_REPO_ROOT="$PWD/JoltPhysics"
+cmake --build JoltC/build --config Release
+ctest --test-dir JoltC/build --build-config Release --output-on-failure --no-tests=error
+```
+
+Eleven suites, hand-rolled C, no framework. Non-zero exit on any failure, and no results
+that mean "skipped" — every test either runs or the run failed.
+
+The libraries are built for ten platforms by `.github/workflows/build-joltc.yml`, which runs
+on every push and pull request. **Tests run on the three whose binaries the runner can
+execute** — `linux-x64`, `win-x64`, `osx-arm64`. The other seven are cross-compiled and only
+build, so a green run proves the desktop subset behaves and the rest compiles.
+
+A pull request gets all ten legs automatically. A branch without a pull request gets nothing:
+`push` is restricted to `main`.
+
+## Pattern modules that apply here
+
+- **Reference counting exposed.** Shapes are `AddRef`/`Release`; the C caller owns a
+  reference it took.
+- **Abstract interface subclassing.** Contact listeners and filters are C++ subclasses
+  forwarding to a function pointer plus `void* userData`.
+
+Not applicable: completion callbacks that transfer ownership, and structs of function
+pointers with an embedded `userData`. Those are CesiumC's shape, because cesium-native is
+future-based. Nothing here is.
+
+## Version
+
+`JOLTC_JOLT_VERSION` in `JoltC/include/JoltC/common.h`, plus the `_MAJOR`, `_MINOR` and
+`_PATCH` integers, and a line in the README. Keep them in step with `release.current` in
+`binding.yml`.
+
+One caution learned the hard way: that macro is a **quoted string**, and the C# generator
+downstream classified it as a float because the value contains a dot. It emitted
+`public const float JOLT_VERSION = "5.5.0";` and broke the binding's build. The generator is
+fixed, but a new string macro is worth a thought.
+
+## Known local quirks
+
+- **Nine functions return NULL unconditionally.** `src/constraint.cpp`,
+  `SETTINGS_STUB(...)` and eight siblings, added to match the reference binding's surface.
+  They are declared in `constraint.h` with nothing marking them inert, so they reach C# as
+  callable methods that always yield null. Leave them alone during a bump; fixing them is
+  its own change.
+- **`vehicle.cpp` uses token-pasting macros** (`WS_VEC3_PROP`, `MCS_FLOAT` and others) that
+  expand to getter and setter pairs. The count of `JOLTC_API` in the sources is therefore
+  lower than the count in the headers, and that gap is not missing code.
