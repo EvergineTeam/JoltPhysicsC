@@ -741,8 +741,17 @@ void run_character_extra_tests(void)
     TEST_END();
 
     /* Direction and sign only. Magnitudes, and the ground state that comes out of
-     * this, are exactly what upstream is allowed to change. */
-    TEST_BEGIN("CharacterVirtual Update falls under gravity");
+     * this, are exactly what upstream is allowed to change.
+     *
+     * The caller integrates gravity, not Update. Jolt's own header is explicit: "it's your
+     * own responsibility to apply gravity to the character velocity", and the gravity
+     * argument "is only used when the character is standing on top of another object to
+     * apply downward force". This test first assumed otherwise -- set the velocity to zero,
+     * call Update twelve times with a gravity vector, expect a fall -- and it failed
+     * identically on all three platforms, which is what a correct wrapper looks like when
+     * the test is wrong. Left as a comment because it is exactly the assumption a consumer
+     * of this API would make, and nothing in character.h contradicts it. */
+    TEST_BEGIN("CharacterVirtual moves under caller-integrated gravity");
     {
         TestPhysicsContext ctx;
         setup_physics_context(&ctx);
@@ -760,14 +769,22 @@ void run_character_extra_tests(void)
         JoltC_Vec3 zero = { 0.0f, 0.0f, 0.0f };
         JoltC_CharacterVirtual_SetLinearVelocity(cv, zero);
 
+        /* The pattern Jolt documents: read the velocity, add gravity * dt, write it back,
+         * then Update. Exercising it here also covers the velocity round-trip through
+         * twelve iterations rather than one. */
         JoltC_Vec3 gravity = { 0.0f, -9.81f, 0.0f };
-        for (int i = 0; i < 12; ++i)
-            JoltC_CharacterVirtual_Update(cv, 1.0f / 60.0f, gravity, ctx.tempAllocator);
+        const float dt = 1.0f / 60.0f;
+        for (int i = 0; i < 12; ++i) {
+            JoltC_Vec3 v = JoltC_CharacterVirtual_GetLinearVelocity(cv);
+            v.y += gravity.y * dt;
+            JoltC_CharacterVirtual_SetLinearVelocity(cv, v);
+            JoltC_CharacterVirtual_Update(cv, dt, gravity, ctx.tempAllocator);
+        }
 
         JoltC_RVec3 nowPos = JoltC_CharacterVirtual_GetPosition(cv);
         JoltC_Vec3 nowVel = JoltC_CharacterVirtual_GetLinearVelocity(cv);
-        TEST_ASSERT(nowPos.y < 20.0f, "y decreased under gravity");
-        TEST_ASSERT(nowVel.y < 0.0f, "vertical velocity is negative under gravity");
+        TEST_ASSERT(nowPos.y < 20.0f, "y decreased once the caller applied gravity");
+        TEST_ASSERT(nowVel.y < 0.0f, "vertical velocity is negative");
         TEST_ASSERT_FLOAT_EQ(nowPos.x, 1.5f, 1e-3f, "no horizontal drift in x");
         TEST_ASSERT_FLOAT_EQ(nowPos.z, -3.25f, 1e-3f, "no horizontal drift in z");
         TEST_ASSERT(is_valid_ground_state((int)JoltC_CharacterVirtual_GetGroundState(cv)),
