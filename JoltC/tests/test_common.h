@@ -98,4 +98,12 @@ void run_character_tests(void);
 void run_skeleton_tests(void);
 void run_vehicle_tests(void);
 
+/* Added ahead of the JoltPhysics 5.6.0 bump. Coverage was 234 of 1,280 functions and
+ * body_access had none at all, so a hand repair could change behaviour with nothing to
+ * notice. These four target what that bump actually touches. */
+void run_body_access_tests(void);
+void run_math_roundtrip_tests(void);
+void run_character_extra_tests(void);
+void run_shape_props_tests(void);
+
 #endif /* TEST_COMMON_H */

@@ -22,6 +22,14 @@ add_executable(JoltC_Tests
     test_character.c
     test_skeleton.c
     test_vehicle.c
+
+    # Added ahead of the JoltPhysics 5.6.0 bump. Coverage was 234 of 1,280 functions with
+    # body_access at none, so a hand repair could change behaviour with nothing to notice.
+    # These four target what that bump actually touches.
+    test_body_access.c
+    test_math_roundtrip.c
+    test_character_extra.c
+    test_shape_props.c
 )
 
 # The target carries its own public include directory, so nothing here needs to know where
