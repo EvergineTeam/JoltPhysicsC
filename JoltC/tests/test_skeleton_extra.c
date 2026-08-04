@@ -825,7 +825,9 @@ static void test_ragdoll_settings_and_instance(void)
             JoltC_Mat44 jointMatrices[2];
             make_translation_matrix(&jointMatrices[0], PART0_X, PART0_Y, PART0_Z);
             make_translation_matrix(&jointMatrices[1], PART1_X, PART1_Y, PART1_Z);
+            printf("[at DisableCollisions] ");
             JoltC_RagdollSettings_DisableParentChildCollisions(rs, jointMatrices, 0.03125f);
+            printf("[at DisableCollisions null] ");
             JoltC_RagdollSettings_DisableParentChildCollisions(rs, NULL, 0.0f);
             TEST_ASSERT(JoltC_RagdollSettings_GetPartCount(rs) == 2,
                         "disabling parent child collisions does not resize the parts");
@@ -834,9 +836,15 @@ static void test_ragdoll_settings_and_instance(void)
         }
 
         /* Documented to return true on success. It redistributes mass between parent and
-         * child, which needs the shapes and the resolved parent indices above. */
+         * child, which needs the shapes and the resolved parent indices above.
+         *
+         * Markers because this test segfaulted in CI and a suite name is not a line number.
+         * Left in: the calls between them are the ones that reach deepest into upstream, and
+         * the next crash here will name itself instead of costing a bisect. */
+        printf("[at Stabilize] ");
         TEST_ASSERT(JoltC_RagdollSettings_Stabilize(rs) != 0,
                     "Stabilize succeeds on a two part chain");
+        printf("[at CalcBodyToConstraint] ");
 
         /* With no constraint attached to either part, both entries are -1. This table has
          * to be built before Ragdoll::DriveToPoseUsingMotors is called: upstream indexes
@@ -848,8 +856,10 @@ static void test_ragdoll_settings_and_instance(void)
                     "a part with a null parent constraint reports -1");
         JoltC_RagdollSettings_CalculateConstraintIndexToBodyIdxPair(rs);
 
+        printf("[at CreateRagdoll] ");
         rd = JoltC_RagdollSettings_CreateRagdoll(rs, ctx.physicsSystem,
                                                  RAGDOLL_GROUP_ID, RAGDOLL_USER_DATA);
+        printf("[created] ");
         TEST_ASSERT_NOT_NULL(rd, "ragdoll created");
 
         if (rd) {
