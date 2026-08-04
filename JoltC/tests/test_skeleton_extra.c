@@ -738,6 +738,80 @@ static void test_mapper_locked_translations(void)
 #define RAGDOLL_GROUP_ID  7u
 #define RAGDOLL_USER_DATA 0xA1B2C3D4E5F60718ULL
 
+/* The smallest ragdoll a C caller can build: skeleton, parts, shapes, layers, positions,
+ * and nothing else. Deliberately does not call Stabilize or DisableParentChildCollisions.
+ *
+ * It exists because the fuller test below segfaults inside CreateRagdoll -- located with
+ * markers, since CTest reports the whole suite as one test. Two hypotheses fit that: either
+ * CreateRagdoll cannot cope with settings a C caller can legitimately produce, or one of the
+ * two calls before it leaves the settings in a state it cannot cope with. Running the minimal
+ * case separates them, and whichever way it lands the answer belongs in a test rather than in
+ * a commit message. */
+static void test_ragdoll_minimal_creation(void)
+{
+    TestPhysicsContext ctx;
+    JoltC_Skeleton* sk;
+    JoltC_RagdollSettings* rs;
+    JoltC_Ragdoll* rd;
+    const JoltC_Shape* shape;
+    JoltC_Vec3 halfExtent;
+
+    TEST_BEGIN("Ragdoll creation with nothing but parts and shapes");
+    setup_physics_context(&ctx);
+
+    sk = JoltC_Skeleton_Create();
+    rs = JoltC_RagdollSettings_Create();
+    halfExtent.x = 0.25f;
+    halfExtent.y = 0.5f;
+    halfExtent.z = 0.125f;
+    shape = JoltC_BoxShape_Create(halfExtent, 0.0f);
+
+    if (sk && rs && shape) {
+        JoltC_RVec3 p0, p1;
+        JoltC_Quat identity = identity_quat();
+
+        JoltC_Skeleton_AddJoint(sk, "pelvis");
+        JoltC_Skeleton_AddJoint2(sk, "spine", 0);
+        JoltC_RagdollSettings_SetSkeleton(rs, sk);
+        JoltC_RagdollSettings_ResizeParts(rs, 2);
+
+        JoltC_RagdollSettings_SetPartShape(rs, 0, shape);
+        JoltC_RagdollSettings_SetPartShape(rs, 1, shape);
+        JoltC_RagdollSettings_SetPartMotionType(rs, 0, JOLTC_MOTION_TYPE_DYNAMIC);
+        JoltC_RagdollSettings_SetPartMotionType(rs, 1, JOLTC_MOTION_TYPE_DYNAMIC);
+        JoltC_RagdollSettings_SetPartObjectLayer(rs, 0, OBJ_LAYER_DYNAMIC);
+        JoltC_RagdollSettings_SetPartObjectLayer(rs, 1, OBJ_LAYER_DYNAMIC);
+
+        p0.x = PART0_X; p0.y = PART0_Y; p0.z = PART0_Z;
+        p1.x = PART1_X; p1.y = PART1_Y; p1.z = PART1_Z;
+        JoltC_RagdollSettings_SetPartPosition(rs, 0, p0);
+        JoltC_RagdollSettings_SetPartPosition(rs, 1, p1);
+        JoltC_RagdollSettings_SetPartRotation(rs, 0, identity);
+        JoltC_RagdollSettings_SetPartRotation(rs, 1, identity);
+
+        /* No SetPartMassProperties. A part left at Jolt's default computes its mass from the
+         * shape, which is the path with the fewest of our own assumptions in it. */
+        printf("[minimal: at CreateRagdoll] ");
+        rd = JoltC_RagdollSettings_CreateRagdoll(rs, ctx.physicsSystem,
+                                                 RAGDOLL_GROUP_ID, RAGDOLL_USER_DATA);
+        printf("[minimal: created] ");
+        TEST_ASSERT_NOT_NULL(rd, "a ragdoll with no constraints can still be created");
+
+        if (rd) {
+            TEST_ASSERT(JoltC_Ragdoll_GetBodyCount(rd) == 2, "two bodies, one per part");
+            TEST_ASSERT(JoltC_Ragdoll_GetConstraintCount(rd) == 0,
+                        "no constraints, because C cannot supply any");
+            JoltC_Ragdoll_Destroy(rd);
+        }
+    }
+
+    if (shape) JoltC_Shape_Release(shape);
+    if (rs) JoltC_RagdollSettings_Destroy(rs);
+    if (sk) JoltC_Skeleton_Destroy(sk);
+    teardown_physics_context(&ctx);
+    TEST_END();
+}
+
 static void test_ragdoll_settings_and_instance(void)
 {
     TestPhysicsContext ctx;
@@ -1209,6 +1283,7 @@ void run_skeleton_extra_tests(void)
     test_animation_keyframes_and_sampling();
     test_mapper_initialize_and_map();
     test_mapper_locked_translations();
+    test_ragdoll_minimal_creation();
     test_ragdoll_settings_and_instance();
     test_null_handle_safety();
 }
