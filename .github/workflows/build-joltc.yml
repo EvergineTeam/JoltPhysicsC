@@ -213,9 +213,14 @@ jobs:
       # Eleven suites of C tests have existed in this repository since March and no CI has
       # ever run them: they were a standalone CMake project linking a hardcoded
       # ../build/Release/JoltC.lib. This is the signal that a bump did not merely compile.
+      # --verbose rather than --output-on-failure. CTest sees one test here, because the
+      # harness is a single executable, so on a passing run the only thing printed was
+      # "100% tests passed out of 1" -- which says the process exited zero and nothing about
+      # how many of its ~500 assertions ran. That distinction matters most exactly when the
+      # suite is green and somebody is deciding whether to trust it before a version bump.
       - name: Test
         if: matrix.run-tests
-        run: ctest --test-dir JoltC/build --build-config Release --output-on-failure --no-tests=error
+        run: ctest --test-dir JoltC/build --build-config Release --verbose --no-tests=error
 
       # ── Merge static libraries ────────────────────────────────────────
       - name: Merge static libraries (iOS)
