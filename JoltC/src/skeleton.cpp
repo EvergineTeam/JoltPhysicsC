@@ -434,7 +434,15 @@ JOLTC_API void JoltC_RagdollSettings_SetPartToParent(JoltC_RagdollSettings* sett
 JOLTC_API JoltC_Ragdoll* JoltC_RagdollSettings_CreateRagdoll(JoltC_RagdollSettings* s, JoltC_PhysicsSystem* system, JoltC_CollisionGroupID collisionGroup, uint64_t userData) {
     if (!s || !system) return nullptr;
     JOLTC_TRY_BEGIN
-    PhysicsSystem* ps = reinterpret_cast<PhysicsSystem*>(system);
+    /* JoltC_PhysicsSystem is a wrapper struct holding a unique_ptr, not an alias for
+     * PhysicsSystem, so reinterpret_cast handed Jolt the address of the unique_ptr and
+     * every access through it was garbage. CreateRagdoll segfaulted for any input at all,
+     * which is why nothing had noticed: with no way for a C caller to supply a constraint,
+     * the whole ragdoll surface was untested until now.
+     *
+     * This was the only reinterpret_cast<PhysicsSystem*> in the repository; the other 32
+     * call sites already went through ->ptr. */
+    PhysicsSystem* ps = system->ptr.get();
     Ragdoll* rd = asRS(s)->ptr->CreateRagdoll(collisionGroup, userData, ps);
     if (!rd) return nullptr;
     auto* w = new JoltC_Ragdoll_Impl;
