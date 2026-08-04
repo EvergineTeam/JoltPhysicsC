@@ -97,6 +97,13 @@ int main(int argc, char* argv[])
     (void)argc;
     (void)argv;
 
+    /* Unbuffered, so a crash names the test that caused it.
+     *
+     * With buffering on, a segfault discards whatever had not been flushed, and the last
+     * line CI shows is wherever the buffer happened to end -- which sent us looking at a
+     * test that had already passed. The buffer is not worth the minutes. */
+    setvbuf(stdout, NULL, _IONBF, 0);
+
     printf("=== JoltC API Binding Test Suite ===\n\n");
 
     int init_result = JoltC_Init();
