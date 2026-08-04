@@ -138,24 +138,16 @@ int main(int argc, char* argv[])
     printf("\n[SUITE] Vehicle\n");
     run_vehicle_tests();
 
-    printf("
-[SUITE] BodyAccess
-");
+    printf("\n[SUITE] BodyAccess\n");
     run_body_access_tests();
 
-    printf("
-[SUITE] MathRoundTrip
-");
+    printf("\n[SUITE] MathRoundTrip\n");
     run_math_roundtrip_tests();
 
-    printf("
-[SUITE] CharacterExtra
-");
+    printf("\n[SUITE] CharacterExtra\n");
     run_character_extra_tests();
 
-    printf("
-[SUITE] ShapeProperties
-");
+    printf("\n[SUITE] ShapeProperties\n");
     run_shape_props_tests();
 
     JoltC_Shutdown();
