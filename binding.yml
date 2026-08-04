@@ -1,6 +1,14 @@
 # Binding manifest — see https://github.com/EvergineTeam/Evergine.Bindings
 # Schema: https://github.com/EvergineTeam/Evergine.Bindings/blob/main/binding.schema.json
-toolbox: 1.17.0
+toolbox: 1.20.0
+
+# Read by cpp-wrapper-porter. The profile decides everything the shared conventions
+# deliberately leave open -- identifier scheme, overload policy, how a bump is applied here,
+# how the tests run. Required rather than inferred: reading this codebase would tell the
+# agent what it does, not which of its habits are decisions.
+wrapper:
+  profile: .github/wrapper-profile.md
+  version-macro: JOLTC_JOLT_VERSION
 
 # This repository is not a binding: it produces no NuGet package and runs no C# generator.
 # It is the C layer that JoltPhysics.NET binds to, and it carries a manifest for one reason
