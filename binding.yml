@@ -25,7 +25,7 @@ upstream:
     # Stable only. JoltPhysics ships two to four releases a year and its main branch is
     # where the solver gets rewritten; tracking it would mean porting a moving target.
     track: stable
-    current: v5.5.0
+    current: v5.6.0
 
   # report-only, deliberately. Moving this pointer is not a mechanical edit here: there is
   # no generator, so a C++ API change becomes a compile error that somebody -- or the

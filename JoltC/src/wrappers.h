@@ -222,36 +222,52 @@ public:
     JoltC_OnCharacterContactPersistedFn fnPersisted;
     void*                               userData;
 
-    bool OnContactValidate(const CharacterVirtual*, const BodyID &inBodyID2, const SubShapeID&) override {
+    /* JoltPhysics 5.6.0 collapsed the loose parameters of these three virtuals into one
+     * CharacterContact struct, which carries a good deal more than the wrapper needs:
+     *
+     *   OnContactValidate (const CharacterVirtual*, const CharacterContact&)
+     *   OnContactAdded    (const CharacterVirtual*, const CharacterContact&, CharacterContactSettings&)
+     *   OnContactPersisted(const CharacterVirtual*, const CharacterContact&, CharacterContactSettings&)
+     *
+     * The body id moved to the CharacterContactKey base as mBodyB; position and normal are
+     * mPosition and mContactNormal. The C ABI is untouched -- the JoltC_OnCharacterContact*Fn
+     * signatures and everything a downstream binding sees are exactly as they were.
+     *
+     * Note for whoever exposes more of this later: the struct also carries mSurfaceNormal,
+     * mDistance, mFraction, mMotionTypeB, mIsSensorB, mCharacterB, mMaterial and
+     * mIsBackFacingContact. None of them reach C today. mSurfaceNormal in particular is not
+     * mContactNormal -- it is flipped for back-facing contacts -- so a future addition should
+     * not treat them as interchangeable. */
+    bool OnContactValidate(const CharacterVirtual*, const CharacterContact &inContact) override {
         if (fnValidate) {
             JoltC_Bool accept = JOLTC_TRUE;
-            fnValidate(userData, inBodyID2.GetIndexAndSequenceNumber(), &accept);
+            fnValidate(userData, inContact.mBodyB.GetIndexAndSequenceNumber(), &accept);
             return accept != 0;
         }
         return true;
     }
 
-    void OnContactAdded(const CharacterVirtual*, const BodyID &inBodyID2, const SubShapeID&,
-                         RVec3Arg inContactPosition, Vec3Arg inContactNormal, CharacterContactSettings &ioSettings) override {
+    void OnContactAdded(const CharacterVirtual*, const CharacterContact &inContact,
+                         CharacterContactSettings &ioSettings) override {
         if (fnAdded) {
-            JoltC_RVec3 pos; pos.x = (float)inContactPosition.GetX(); pos.y = (float)inContactPosition.GetY(); pos.z = (float)inContactPosition.GetZ();
-            JoltC_Vec3 norm = {inContactNormal.GetX(), inContactNormal.GetY(), inContactNormal.GetZ()};
+            JoltC_RVec3 pos; pos.x = (float)inContact.mPosition.GetX(); pos.y = (float)inContact.mPosition.GetY(); pos.z = (float)inContact.mPosition.GetZ();
+            JoltC_Vec3 norm = {inContact.mContactNormal.GetX(), inContact.mContactNormal.GetY(), inContact.mContactNormal.GetZ()};
             JoltC_Bool canPush = ioSettings.mCanPushCharacter ? JOLTC_TRUE : JOLTC_FALSE;
             JoltC_Bool canImpulse = ioSettings.mCanReceiveImpulses ? JOLTC_TRUE : JOLTC_FALSE;
-            fnAdded(userData, inBodyID2.GetIndexAndSequenceNumber(), pos, norm, &canPush, &canImpulse);
+            fnAdded(userData, inContact.mBodyB.GetIndexAndSequenceNumber(), pos, norm, &canPush, &canImpulse);
             ioSettings.mCanPushCharacter = canPush != 0;
             ioSettings.mCanReceiveImpulses = canImpulse != 0;
         }
     }
 
-    void OnContactPersisted(const CharacterVirtual*, const BodyID &inBodyID2, const SubShapeID&,
-                             RVec3Arg inContactPosition, Vec3Arg inContactNormal, CharacterContactSettings &ioSettings) override {
+    void OnContactPersisted(const CharacterVirtual*, const CharacterContact &inContact,
+                             CharacterContactSettings &ioSettings) override {
         if (fnPersisted) {
-            JoltC_RVec3 pos; pos.x = (float)inContactPosition.GetX(); pos.y = (float)inContactPosition.GetY(); pos.z = (float)inContactPosition.GetZ();
-            JoltC_Vec3 norm = {inContactNormal.GetX(), inContactNormal.GetY(), inContactNormal.GetZ()};
+            JoltC_RVec3 pos; pos.x = (float)inContact.mPosition.GetX(); pos.y = (float)inContact.mPosition.GetY(); pos.z = (float)inContact.mPosition.GetZ();
+            JoltC_Vec3 norm = {inContact.mContactNormal.GetX(), inContact.mContactNormal.GetY(), inContact.mContactNormal.GetZ()};
             JoltC_Bool canPush = ioSettings.mCanPushCharacter ? JOLTC_TRUE : JOLTC_FALSE;
             JoltC_Bool canImpulse = ioSettings.mCanReceiveImpulses ? JOLTC_TRUE : JOLTC_FALSE;
-            fnPersisted(userData, inBodyID2.GetIndexAndSequenceNumber(), pos, norm, &canPush, &canImpulse);
+            fnPersisted(userData, inContact.mBodyB.GetIndexAndSequenceNumber(), pos, norm, &canPush, &canImpulse);
             ioSettings.mCanPushCharacter = canPush != 0;
             ioSettings.mCanReceiveImpulses = canImpulse != 0;
         }
