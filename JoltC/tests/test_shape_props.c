@@ -223,22 +223,33 @@ static void test_shape_ray_and_point(void)
 static void test_mutable_compound_modification(void)
 {
     TEST_BEGIN("MutableCompoundShape add, modify, remove");
-    const JoltC_Shape* compound = JoltC_MutableCompoundShape_Create();
     const JoltC_Shape* child = JoltC_BoxShape_Create((JoltC_Vec3){ 0.5f, 0.5f, 0.5f }, 0.05f);
+    TEST_ASSERT_NOT_NULL(child, "child shape created");
+
+    /* Jolt requires a compound to be created with at least one sub-shape; there is no
+     * empty-compound constructor. So the first child comes in through Create and the
+     * second through AddShape, which is also the more interesting pair to compare. */
+    JoltC_Quat identity = { 0.0f, 0.0f, 0.0f, 1.0f };
+    JoltC_CompoundShapeSubShape initial;
+    initial.shape = child;
+    initial.position = (JoltC_Vec3){ 1.5f, 0.0f, 0.0f };
+    initial.rotation = identity;
+    initial.userData = 11u;
+
+    const JoltC_Shape* compound = JoltC_MutableCompoundShape_Create(&initial, 1);
     TEST_ASSERT_NOT_NULL(compound, "compound created");
 
     if (compound && child) {
-        JoltC_Quat identity = { 0.0f, 0.0f, 0.0f, 1.0f };
-        uint32_t first = JoltC_MutableCompoundShape_AddShape(
-            compound, (JoltC_Vec3){ 1.5f, 0.0f, 0.0f }, identity, child, 11u);
+        TEST_ASSERT(JoltC_CompoundShape_GetNumSubShapes(compound) == 1,
+                    "Create with one sub-shape gives one child");
+
         uint32_t second = JoltC_MutableCompoundShape_AddShape(
             compound, (JoltC_Vec3){ -1.5f, 0.0f, 0.0f }, identity, child, 22u);
         TEST_ASSERT(JoltC_CompoundShape_GetNumSubShapes(compound) == 2,
-                    "two children were added");
-        TEST_ASSERT(first != second, "each add returns its own index");
+                    "AddShape brings it to two");
 
         JoltC_MutableCompoundShape_ModifyShape(
-            compound, first, (JoltC_Vec3){ 0.0f, 2.5f, 0.0f }, identity);
+            compound, 0u, (JoltC_Vec3){ 0.0f, 2.5f, 0.0f }, identity);
         JoltC_MutableCompoundShape_AdjustCenterOfMass(compound);
         TEST_ASSERT(JoltC_CompoundShape_GetNumSubShapes(compound) == 2,
                     "modifying does not change the child count");
