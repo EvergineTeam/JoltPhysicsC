@@ -339,3 +339,13 @@ jobs:
             the library where the package expects it.
           files: release/*.zip
           fail_on_unmatched_files: true
+
+      # JoltPhysics.NET used to find out from a monthly cron that fires the day before this
+      # repository's porter agent runs, so a version took two months to reach a package rather
+      # than one. It is told directly now. Who it is is declared in binding.yml.
+      - name: Tell the bindings a release exists
+        uses: EvergineTeam/Evergine.Bindings/.github/actions/notify-downstream@v1
+        with:
+          app-client-id: ${{ vars.APP_CLIENT_ID }}
+          app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          tag: ${{ inputs.release-tag }}
