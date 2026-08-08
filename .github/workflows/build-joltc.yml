@@ -280,6 +280,114 @@ jobs:
           cp "$found" "$dest/$name"
           echo "staged $found -> $dest/$name"
 
+      # ── Prove the wasm archive is usable, before it becomes a release asset ──
+      # A .NET publish, not an emcc link check, and the difference is the whole point: .NET links
+      # with its own flags (-exception-model=wasm, a fixed wasm-opt feature list, no setjmp
+      # support library), so an archive can satisfy emcc and still be unusable by the only
+      # consumer this repository has. In CesiumC three separate blockers were found by a person
+      # running a publish by hand and none by the emcc check sitting in the same job.
+      #
+      # It also covers the step after linking. wasm-opt runs with a fixed feature list, and an
+      # archive can link cleanly and then fail validation.
+      #
+      # This exists because the wasm library shipped in ten releases of
+      # Evergine.Bindings.JoltPhysics without anything ever linking it. The archive turned out to
+      # be fine and the packaging was not, but nothing here could have told the difference.
+      - name: Setup .NET for the consumer check
+        if: matrix.platform == 'browser-wasm'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Install the wasm workload
+        if: matrix.platform == 'browser-wasm'
+        run: dotnet workload install wasm-tools
+
+      - name: Publish a .NET wasm application against the archive
+        if: matrix.platform == 'browser-wasm'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dotnetcheck
+
+          # Named after the DllImport, not after what CMake produced. The module name comes from
+          # the file name, which is why JoltPhysics.NET renames it when it packs.
+          cp staging/runtimes/browser-wasm/native/libJoltC.a dotnetcheck/JoltC.a
+
+          cat > dotnetcheck/Check.csproj <<'PROJ'
+          <Project Sdk="Microsoft.NET.Sdk">
+            <PropertyGroup>
+              <TargetFramework>net10.0</TargetFramework>
+              <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+              <OutputType>Exe</OutputType>
+              <WasmMainJSPath>main.mjs</WasmMainJSPath>
+              <WasmBuildNative>true</WasmBuildNative>
+              <InvariantGlobalization>true</InvariantGlobalization>
+            </PropertyGroup>
+            <ItemGroup>
+              <NativeFileReference Include="JoltC.a" ScanForPInvokes="true" />
+            </ItemGroup>
+          </Project>
+          PROJ
+
+          cat > dotnetcheck/main.mjs <<'MJS'
+          import { dotnet } from './_framework/dotnet.js'
+          const { runMain } = await dotnet.create();
+          process.exit(await runMain());
+          MJS
+
+          cat > dotnetcheck/Program.cs <<'CS'
+          using System;
+          using System.Runtime.InteropServices;
+
+          internal static class Program
+          {
+              const string Lib = "JoltC";
+
+              [DllImport(Lib, EntryPoint = "JoltC_RegisterDefaultAllocator")] static extern void RegisterDefaultAllocator();
+              [DllImport(Lib, EntryPoint = "JoltC_Init")] static extern int Init();
+              [DllImport(Lib, EntryPoint = "JoltC_CreateFactory")] static extern void CreateFactory();
+              [DllImport(Lib, EntryPoint = "JoltC_RegisterTypes")] static extern void RegisterTypes();
+              [DllImport(Lib, EntryPoint = "JoltC_TempAllocator_Create")] static extern IntPtr TempAllocatorCreate(uint size);
+              [DllImport(Lib, EntryPoint = "JoltC_JobSystemThreadPool_Create")] static extern IntPtr JobSystemCreate(uint maxJobs, uint maxBarriers, int numThreads);
+              [DllImport(Lib, EntryPoint = "JoltC_BroadPhaseLayerInterfaceTable_Create")] static extern IntPtr BroadPhaseCreate(uint objectLayers, uint broadPhaseLayers);
+              [DllImport(Lib, EntryPoint = "JoltC_ObjectLayerPairFilterTable_Create")] static extern IntPtr LayerPairFilterCreate(uint objectLayers);
+              [DllImport(Lib, EntryPoint = "JoltC_PhysicsSystem_Create")] static extern IntPtr PhysicsSystemCreate();
+              [DllImport(Lib, EntryPoint = "JoltC_SphereShape_Create")] static extern IntPtr SphereShapeCreate(float radius);
+
+              static int Main()
+              {
+                  // Calls rather than references, so the linker has to pull the members behind
+                  // them. The physics system and a shape between them drag in most of Jolt.
+                  //
+                  // numThreads = 0: there is no pthread here, and JoltPhysics then runs jobs on
+                  // the thread that waits at the barrier.
+                  RegisterDefaultAllocator();
+                  Init();
+                  CreateFactory();
+                  RegisterTypes();
+
+                  IntPtr temp = TempAllocatorCreate(4 * 1024 * 1024);
+                  IntPtr jobs = JobSystemCreate(1024, 8, 0);
+                  IntPtr broadPhase = BroadPhaseCreate(2, 2);
+                  IntPtr layerPairs = LayerPairFilterCreate(2);
+                  IntPtr system = PhysicsSystemCreate();
+                  IntPtr sphere = SphereShapeCreate(0.5f);
+
+                  bool ok = temp != IntPtr.Zero && jobs != IntPtr.Zero && broadPhase != IntPtr.Zero
+                            && layerPairs != IntPtr.Zero && system != IntPtr.Zero && sphere != IntPtr.Zero;
+
+                  Console.WriteLine($"temp=0x{temp:x} jobs=0x{jobs:x} system=0x{system:x} sphere=0x{sphere:x}");
+                  Console.WriteLine(ok ? "PASS" : "FAIL");
+                  return ok ? 0 : 1;
+              }
+          }
+          CS
+
+          dotnet publish dotnetcheck/Check.csproj -c Release
+          node dotnetcheck/bin/Release/net10.0/browser-wasm/AppBundle/main.mjs
+          echo "a .NET wasm application linked this archive and ran it"
+
       - name: Upload library
         uses: actions/upload-artifact@v5
         with:
