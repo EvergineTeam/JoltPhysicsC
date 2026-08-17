@@ -57,7 +57,7 @@ safe-outputs:
     allowed-labels: [agent:needs-human, agent:upstream-break]
     deduplicate-by-title: true
     max: 1
-source: EvergineTeam/Evergine.Bindings@ff6a8091c7bc0923f326db5ccc33cbe517d318d7
+source: EvergineTeam/Evergine.Bindings@ace4e8d477b877e973e5c748a81aff8f24c6fe42
 ---
 
 # C++ Wrapper Porter
