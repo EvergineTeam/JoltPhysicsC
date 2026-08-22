@@ -58,6 +58,7 @@ set(JOLTC_SRC
     src/filters.cpp
     src/vehicle.cpp
     src/skeleton.cpp
+    src/soft_body.cpp
 )
 
 if (JOLTC_STATIC)

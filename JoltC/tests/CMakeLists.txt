@@ -36,6 +36,11 @@ add_executable(JoltC_Tests
     # The first suite that creates, registers, steps and destroys a live vehicle:
     # the path the three incompatible-handle faults shipped through untested.
     test_vehicle_live.c
+
+    # Live soft bodies: shared settings construction, creation-settings setters, and
+    # reading simulated vertices back. Before this surface existed the creation handle
+    # was a write-only cul-de-sac.
+    test_soft_body.c
 )
 
 # The target carries its own public include directory, so nothing here needs to know where

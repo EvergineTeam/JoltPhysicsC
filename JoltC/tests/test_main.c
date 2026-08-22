@@ -165,6 +165,9 @@ int main(int argc, char* argv[])
 
     run_vehicle_live_tests();
 
+    printf("\n[SUITE] SoftBody\n");
+    run_soft_body_tests();
+
     JoltC_Shutdown();
 
     printf("\n=== Results: %d/%d passed, %d failed ===\n",

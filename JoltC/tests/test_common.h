@@ -109,4 +109,8 @@ void run_skeleton_extra_tests(void);
 void run_vehicle_extra_tests(void);
 void run_vehicle_live_tests(void);
 
+/* Added with the soft body surface (SoftBodySharedSettings + SoftBodyMotionProperties):
+ * before it, a soft body could be created but never configured or read back. */
+void run_soft_body_tests(void);
+
 #endif /* TEST_COMMON_H */
