@@ -4,6 +4,7 @@
 
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Vehicle/VehicleConstraint.h>
+#include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Vehicle/VehicleCollisionTester.h>
 #include <Jolt/Physics/Vehicle/WheeledVehicleController.h>
 #include <Jolt/Physics/Vehicle/MotorcycleController.h>
@@ -381,6 +382,39 @@ JOLTC_API JoltC_VehicleConstraint* JoltC_VehicleConstraint_Create(JoltC_Body* bo
 JOLTC_API JoltC_PhysicsStepListener* JoltC_VehicleConstraint_AsPhysicsStepListener(JoltC_VehicleConstraint* vc) {
     if (!vc) return nullptr;
     return reinterpret_cast<JoltC_PhysicsStepListener*>(static_cast<PhysicsStepListener*>(asVC(vc)));
+}
+
+JOLTC_API JoltC_Constraint* JoltC_VehicleConstraint_AsConstraint(JoltC_VehicleConstraint* vc) {
+    if (!vc) return nullptr;
+    JOLTC_TRY_BEGIN
+    /* Same shape as JoltC_Character_AsBase: a fresh wrapper holding its own Ref, freed by
+     * JoltC_Constraint_Destroy. The Ref keeps the vehicle alive while the view exists. */
+    auto* w = new JoltC_Constraint;
+    w->ptr = static_cast<Constraint*>(asVC(vc));
+    return w;
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API void JoltC_PhysicsSystem_AddVehicleStepListener(JoltC_PhysicsSystem* system, JoltC_VehicleConstraint* vc) {
+    if (!system || !vc) return;
+    JOLTC_TRY_BEGIN
+    system->ptr->AddStepListener(static_cast<PhysicsStepListener*>(asVC(vc)));
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_PhysicsSystem_RemoveVehicleStepListener(JoltC_PhysicsSystem* system, JoltC_VehicleConstraint* vc) {
+    if (!system || !vc) return;
+    JOLTC_TRY_BEGIN
+    system->ptr->RemoveStepListener(static_cast<PhysicsStepListener*>(asVC(vc)));
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_VehicleConstraint_Destroy(JoltC_VehicleConstraint* vc) {
+    if (!vc) return;
+    JOLTC_TRY_BEGIN
+    asVC(vc)->Release();
+    JOLTC_TRY_END
 }
 
 JOLTC_API void JoltC_VehicleConstraint_SetMaxPitchRollAngle(JoltC_VehicleConstraint* vc, float angle) {

@@ -107,5 +107,6 @@ void run_character_extra_tests(void);
 void run_shape_props_tests(void);
 void run_skeleton_extra_tests(void);
 void run_vehicle_extra_tests(void);
+void run_vehicle_live_tests(void);
 
 #endif /* TEST_COMMON_H */

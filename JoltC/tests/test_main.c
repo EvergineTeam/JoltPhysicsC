@@ -163,6 +163,8 @@ int main(int argc, char* argv[])
     printf("\n[SUITE] VehicleExtra\n");
     run_vehicle_extra_tests();
 
+    run_vehicle_live_tests();
+
     JoltC_Shutdown();
 
     printf("\n=== Results: %d/%d passed, %d failed ===\n",

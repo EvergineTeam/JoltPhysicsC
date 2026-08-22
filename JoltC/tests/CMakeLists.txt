@@ -32,6 +32,10 @@ add_executable(JoltC_Tests
     test_shape_props.c
     test_skeleton_extra.c
     test_vehicle_extra.c
+
+    # The first suite that creates, registers, steps and destroys a live vehicle:
+    # the path the three incompatible-handle faults shipped through untested.
+    test_vehicle_live.c
 )
 
 # The target carries its own public include directory, so nothing here needs to know where
