@@ -122,4 +122,9 @@ void run_phase0_tests(void);
  * introspection (triangle walk, leaf resolution, submerged volume, runtime terrain deformation). */
 void run_phase1_tests(void);
 
+/* Phase 2: the complete soft body surface: per-vertex attributes and the LRA constraints they
+ * unlock, direct constraint construction, Cosserat rods, skinning, per-vertex runtime writes and
+ * hand-stepped bodies via CustomUpdate. */
+void run_phase2_tests(void);
+
 #endif /* TEST_COMMON_H */

@@ -449,4 +449,503 @@ JOLTC_API JoltC_BodyID JoltC_SoftBodyManifold_GetSensorContactBodyID(const JoltC
     return fromJphBodyID(asManifold(manifold)->GetSensorContactBodyID(index));
 }
 
+/* ========================================================================== */
+/*  Phase 2: full construction surface                                        */
+/* ========================================================================== */
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_AddVertex2(JoltC_SoftBodySharedSettings* settings, float x, float y, float z, float vx, float vy, float vz, float invMass)
+{
+    if (!settings) return 0;
+    JOLTC_TRY_BEGIN
+    SoftBodySharedSettings* s = asSBSS(settings);
+    SoftBodySharedSettings::Vertex v;
+    v.mPosition = Float3(x, y, z);
+    v.mVelocity = Float3(vx, vy, vz);
+    v.mInvMass = invMass;
+    s->mVertices.push_back(v);
+    return (uint32_t)(s->mVertices.size() - 1);
+    JOLTC_TRY_END
+    return 0;
+}
+
+JOLTC_API void JoltC_SoftBodySharedSettings_CreateConstraints2(
+    JoltC_SoftBodySharedSettings* settings,
+    const JoltC_SoftBodyVertexAttributes* vertexAttributes,
+    uint32_t vertexAttributesCount,
+    JoltC_SoftBodyBendType bendType,
+    float angleTolerance)
+{
+    if (!settings || !vertexAttributes || vertexAttributesCount == 0) return;
+    JOLTC_TRY_BEGIN
+    Array<SoftBodySharedSettings::VertexAttributes> attributes;
+    attributes.reserve(vertexAttributesCount);
+    for (uint32_t i = 0; i < vertexAttributesCount; i++)
+    {
+        SoftBodySharedSettings::VertexAttributes a;
+        a.mCompliance = vertexAttributes[i].compliance;
+        a.mShearCompliance = vertexAttributes[i].shearCompliance;
+        a.mBendCompliance = vertexAttributes[i].bendCompliance;
+        a.mLRAType = static_cast<SoftBodySharedSettings::ELRAType>(vertexAttributes[i].lraType);
+        a.mLRAMaxDistanceMultiplier = vertexAttributes[i].lraMaxDistanceMultiplier;
+        attributes.push_back(a);
+    }
+    asSBSS(settings)->CreateConstraints(
+        attributes.data(), (uint)attributes.size(),
+        static_cast<SoftBodySharedSettings::EBendType>(bendType), angleTolerance);
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_SoftBodySharedSettings_CalculateBendConstraintConstants(JoltC_SoftBodySharedSettings* settings)
+{
+    if (!settings) return;
+    JOLTC_TRY_BEGIN
+    asSBSS(settings)->CalculateBendConstraintConstants();
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_SoftBodySharedSettings_CalculateLRALengths(JoltC_SoftBodySharedSettings* settings, float maxDistanceMultiplier)
+{
+    if (!settings) return;
+    JOLTC_TRY_BEGIN
+    asSBSS(settings)->CalculateLRALengths(maxDistanceMultiplier);
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_SoftBodySharedSettings_CalculateRodProperties(JoltC_SoftBodySharedSettings* settings)
+{
+    if (!settings) return;
+    JOLTC_TRY_BEGIN
+    asSBSS(settings)->CalculateRodProperties();
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_SoftBodySharedSettings_CalculateSkinnedConstraintNormals(JoltC_SoftBodySharedSettings* settings)
+{
+    if (!settings) return;
+    JOLTC_TRY_BEGIN
+    asSBSS(settings)->CalculateSkinnedConstraintNormals();
+    JOLTC_TRY_END
+}
+
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_AddEdgeConstraint(JoltC_SoftBodySharedSettings* settings, uint32_t vertex1, uint32_t vertex2, float compliance)
+{
+    if (!settings) return 0;
+    JOLTC_TRY_BEGIN
+    SoftBodySharedSettings* s = asSBSS(settings);
+    s->mEdgeConstraints.push_back(SoftBodySharedSettings::Edge(vertex1, vertex2, compliance));
+    return (uint32_t)(s->mEdgeConstraints.size() - 1);
+    JOLTC_TRY_END
+    return 0;
+}
+
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_AddDihedralBendConstraint(JoltC_SoftBodySharedSettings* settings, uint32_t vertex1, uint32_t vertex2, uint32_t vertex3, uint32_t vertex4, float compliance)
+{
+    if (!settings) return 0;
+    JOLTC_TRY_BEGIN
+    SoftBodySharedSettings* s = asSBSS(settings);
+    s->mDihedralBendConstraints.push_back(SoftBodySharedSettings::DihedralBend(vertex1, vertex2, vertex3, vertex4, compliance));
+    return (uint32_t)(s->mDihedralBendConstraints.size() - 1);
+    JOLTC_TRY_END
+    return 0;
+}
+
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_AddVolumeConstraint(JoltC_SoftBodySharedSettings* settings, uint32_t vertex1, uint32_t vertex2, uint32_t vertex3, uint32_t vertex4, float compliance)
+{
+    if (!settings) return 0;
+    JOLTC_TRY_BEGIN
+    SoftBodySharedSettings* s = asSBSS(settings);
+    s->mVolumeConstraints.push_back(SoftBodySharedSettings::Volume(vertex1, vertex2, vertex3, vertex4, compliance));
+    return (uint32_t)(s->mVolumeConstraints.size() - 1);
+    JOLTC_TRY_END
+    return 0;
+}
+
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_AddLRAConstraint(JoltC_SoftBodySharedSettings* settings, uint32_t vertex1, uint32_t vertex2, float maxDistance)
+{
+    if (!settings) return 0;
+    JOLTC_TRY_BEGIN
+    SoftBodySharedSettings* s = asSBSS(settings);
+    s->mLRAConstraints.push_back(SoftBodySharedSettings::LRA(vertex1, vertex2, maxDistance));
+    return (uint32_t)(s->mLRAConstraints.size() - 1);
+    JOLTC_TRY_END
+    return 0;
+}
+
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_AddRodStretchShearConstraint(JoltC_SoftBodySharedSettings* settings, uint32_t vertex1, uint32_t vertex2, float compliance)
+{
+    if (!settings) return 0;
+    JOLTC_TRY_BEGIN
+    SoftBodySharedSettings* s = asSBSS(settings);
+    s->mRodStretchShearConstraints.push_back(SoftBodySharedSettings::RodStretchShear(vertex1, vertex2, compliance));
+    return (uint32_t)(s->mRodStretchShearConstraints.size() - 1);
+    JOLTC_TRY_END
+    return 0;
+}
+
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_AddRodBendTwistConstraint(JoltC_SoftBodySharedSettings* settings, uint32_t rod1, uint32_t rod2, float compliance)
+{
+    if (!settings) return 0;
+    JOLTC_TRY_BEGIN
+    SoftBodySharedSettings* s = asSBSS(settings);
+    s->mRodBendTwistConstraints.push_back(SoftBodySharedSettings::RodBendTwist(rod1, rod2, compliance));
+    return (uint32_t)(s->mRodBendTwistConstraints.size() - 1);
+    JOLTC_TRY_END
+    return 0;
+}
+
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_AddInvBindMatrix(JoltC_SoftBodySharedSettings* settings, uint32_t jointIndex, const JoltC_Mat44* invBind)
+{
+    if (!settings || !invBind) return 0;
+    JOLTC_TRY_BEGIN
+    SoftBodySharedSettings* s = asSBSS(settings);
+    s->mInvBindMatrices.push_back(SoftBodySharedSettings::InvBind(jointIndex, toJphMat44(*invBind)));
+    return (uint32_t)(s->mInvBindMatrices.size() - 1);
+    JOLTC_TRY_END
+    return 0;
+}
+
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_AddSkinnedConstraint(
+    JoltC_SoftBodySharedSettings* settings,
+    uint32_t vertex,
+    float maxDistance,
+    float backStopDistance,
+    float backStopRadius,
+    const uint32_t* invBindIndices,
+    const float* weights,
+    int numWeights)
+{
+    if (!settings || !invBindIndices || !weights || numWeights <= 0) return 0;
+    JOLTC_TRY_BEGIN
+    SoftBodySharedSettings* s = asSBSS(settings);
+    SoftBodySharedSettings::Skinned skinned(vertex, maxDistance, backStopDistance, backStopRadius);
+    int count = numWeights < (int)SoftBodySharedSettings::Skinned::cMaxSkinWeights
+        ? numWeights
+        : (int)SoftBodySharedSettings::Skinned::cMaxSkinWeights;
+    for (int i = 0; i < count; i++)
+        skinned.mWeights[i] = SoftBodySharedSettings::SkinWeight(invBindIndices[i], weights[i]);
+    skinned.NormalizeWeights();
+    s->mSkinnedConstraints.push_back(skinned);
+    return (uint32_t)(s->mSkinnedConstraints.size() - 1);
+    JOLTC_TRY_END
+    return 0;
+}
+
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_GetEdgeConstraintCount(const JoltC_SoftBodySharedSettings* settings)
+{
+    if (!settings) return 0;
+    return (uint32_t)asSBSS(settings)->mEdgeConstraints.size();
+}
+
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_GetDihedralBendConstraintCount(const JoltC_SoftBodySharedSettings* settings)
+{
+    if (!settings) return 0;
+    return (uint32_t)asSBSS(settings)->mDihedralBendConstraints.size();
+}
+
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_GetVolumeConstraintCount(const JoltC_SoftBodySharedSettings* settings)
+{
+    if (!settings) return 0;
+    return (uint32_t)asSBSS(settings)->mVolumeConstraints.size();
+}
+
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_GetSkinnedConstraintCount(const JoltC_SoftBodySharedSettings* settings)
+{
+    if (!settings) return 0;
+    return (uint32_t)asSBSS(settings)->mSkinnedConstraints.size();
+}
+
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_GetLRAConstraintCount(const JoltC_SoftBodySharedSettings* settings)
+{
+    if (!settings) return 0;
+    return (uint32_t)asSBSS(settings)->mLRAConstraints.size();
+}
+
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_GetRodStretchShearConstraintCount(const JoltC_SoftBodySharedSettings* settings)
+{
+    if (!settings) return 0;
+    return (uint32_t)asSBSS(settings)->mRodStretchShearConstraints.size();
+}
+
+JOLTC_API uint32_t JoltC_SoftBodySharedSettings_GetRodBendTwistConstraintCount(const JoltC_SoftBodySharedSettings* settings)
+{
+    if (!settings) return 0;
+    return (uint32_t)asSBSS(settings)->mRodBendTwistConstraints.size();
+}
+
+/* ========================================================================== */
+/*  Phase 2: creation settings, the rest of the struct                        */
+/* ========================================================================== */
+JOLTC_API void JoltC_SoftBodyCreationSettings_SetFacesDoubleSided(JoltC_SoftBodyCreationSettings* settings, JoltC_Bool facesDoubleSided)
+{
+    if (!settings) return;
+    asSBCS(settings)->settings.mFacesDoubleSided = facesDoubleSided != 0;
+}
+
+JOLTC_API void JoltC_SoftBodyCreationSettings_SetCollisionGroup(JoltC_SoftBodyCreationSettings* settings, JoltC_GroupFilter* filter, uint32_t groupId, uint32_t subGroupId)
+{
+    if (!settings) return;
+    JOLTC_TRY_BEGIN
+    CollisionGroup group(filter ? filter->ptr.GetPtr() : nullptr, groupId, subGroupId);
+    asSBCS(settings)->settings.mCollisionGroup = group;
+    JOLTC_TRY_END
+}
+
+JOLTC_API JoltC_RVec3 JoltC_SoftBodyCreationSettings_GetPosition(const JoltC_SoftBodyCreationSettings* settings)
+{
+    JoltC_RVec3 zero = { 0, 0, 0 };
+    if (!settings) return zero;
+    return fromJphRVec3(asSBCS(settings)->settings.mPosition);
+}
+
+JOLTC_API JoltC_Quat JoltC_SoftBodyCreationSettings_GetRotation(const JoltC_SoftBodyCreationSettings* settings)
+{
+    JoltC_Quat identity = { 0, 0, 0, 1 };
+    if (!settings) return identity;
+    return fromJphQuat(asSBCS(settings)->settings.mRotation);
+}
+
+JOLTC_API JoltC_ObjectLayer JoltC_SoftBodyCreationSettings_GetObjectLayer(const JoltC_SoftBodyCreationSettings* settings)
+{
+    if (!settings) return 0;
+    return asSBCS(settings)->settings.mObjectLayer;
+}
+
+JOLTC_API uint32_t JoltC_SoftBodyCreationSettings_GetNumIterations(const JoltC_SoftBodyCreationSettings* settings)
+{
+    if (!settings) return 0;
+    return asSBCS(settings)->settings.mNumIterations;
+}
+
+JOLTC_API float JoltC_SoftBodyCreationSettings_GetLinearDamping(const JoltC_SoftBodyCreationSettings* settings)
+{
+    if (!settings) return 0.0f;
+    return asSBCS(settings)->settings.mLinearDamping;
+}
+
+JOLTC_API float JoltC_SoftBodyCreationSettings_GetMaxLinearVelocity(const JoltC_SoftBodyCreationSettings* settings)
+{
+    if (!settings) return 0.0f;
+    return asSBCS(settings)->settings.mMaxLinearVelocity;
+}
+
+JOLTC_API float JoltC_SoftBodyCreationSettings_GetRestitution(const JoltC_SoftBodyCreationSettings* settings)
+{
+    if (!settings) return 0.0f;
+    return asSBCS(settings)->settings.mRestitution;
+}
+
+JOLTC_API float JoltC_SoftBodyCreationSettings_GetFriction(const JoltC_SoftBodyCreationSettings* settings)
+{
+    if (!settings) return 0.0f;
+    return asSBCS(settings)->settings.mFriction;
+}
+
+JOLTC_API float JoltC_SoftBodyCreationSettings_GetPressure(const JoltC_SoftBodyCreationSettings* settings)
+{
+    if (!settings) return 0.0f;
+    return asSBCS(settings)->settings.mPressure;
+}
+
+JOLTC_API float JoltC_SoftBodyCreationSettings_GetGravityFactor(const JoltC_SoftBodyCreationSettings* settings)
+{
+    if (!settings) return 0.0f;
+    return asSBCS(settings)->settings.mGravityFactor;
+}
+
+JOLTC_API float JoltC_SoftBodyCreationSettings_GetVertexRadius(const JoltC_SoftBodyCreationSettings* settings)
+{
+    if (!settings) return 0.0f;
+    return asSBCS(settings)->settings.mVertexRadius;
+}
+
+JOLTC_API JoltC_Bool JoltC_SoftBodyCreationSettings_GetUpdatePosition(const JoltC_SoftBodyCreationSettings* settings)
+{
+    if (!settings) return JOLTC_FALSE;
+    return asSBCS(settings)->settings.mUpdatePosition ? JOLTC_TRUE : JOLTC_FALSE;
+}
+
+JOLTC_API JoltC_Bool JoltC_SoftBodyCreationSettings_GetMakeRotationIdentity(const JoltC_SoftBodyCreationSettings* settings)
+{
+    if (!settings) return JOLTC_FALSE;
+    return asSBCS(settings)->settings.mMakeRotationIdentity ? JOLTC_TRUE : JOLTC_FALSE;
+}
+
+JOLTC_API JoltC_Bool JoltC_SoftBodyCreationSettings_GetAllowSleeping(const JoltC_SoftBodyCreationSettings* settings)
+{
+    if (!settings) return JOLTC_FALSE;
+    return asSBCS(settings)->settings.mAllowSleeping ? JOLTC_TRUE : JOLTC_FALSE;
+}
+
+JOLTC_API uint64_t JoltC_SoftBodyCreationSettings_GetUserData(const JoltC_SoftBodyCreationSettings* settings)
+{
+    if (!settings) return 0;
+    return asSBCS(settings)->settings.mUserData;
+}
+
+JOLTC_API JoltC_Bool JoltC_SoftBodyCreationSettings_GetFacesDoubleSided(const JoltC_SoftBodyCreationSettings* settings)
+{
+    if (!settings) return JOLTC_FALSE;
+    return asSBCS(settings)->settings.mFacesDoubleSided ? JOLTC_TRUE : JOLTC_FALSE;
+}
+
+/* ========================================================================== */
+/*  Phase 2: per-vertex runtime access                                        */
+/* ========================================================================== */
+JOLTC_API void JoltC_SoftBodyMotionProperties_SetVertexPosition(JoltC_SoftBodyMotionProperties* motionProperties, uint32_t index, JoltC_Vec3 position)
+{
+    if (!motionProperties) return;
+    JOLTC_TRY_BEGIN
+    SoftBodyMotionProperties* mp = asSBMP(motionProperties);
+    if (index >= mp->GetVertices().size()) return;
+    mp->GetVertex(index).mPosition = toJphVec3(position);
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_SoftBodyMotionProperties_GetVertexVelocity(const JoltC_SoftBodyMotionProperties* motionProperties, uint32_t index, JoltC_Vec3* outVelocity)
+{
+    if (!motionProperties || !outVelocity) return;
+    JOLTC_TRY_BEGIN
+    const SoftBodyMotionProperties* mp = asSBMP(motionProperties);
+    if (index >= mp->GetVertices().size()) return;
+    *outVelocity = fromJphVec3(mp->GetVertex(index).mVelocity);
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_SoftBodyMotionProperties_SetVertexVelocity(JoltC_SoftBodyMotionProperties* motionProperties, uint32_t index, JoltC_Vec3 velocity)
+{
+    if (!motionProperties) return;
+    JOLTC_TRY_BEGIN
+    SoftBodyMotionProperties* mp = asSBMP(motionProperties);
+    if (index >= mp->GetVertices().size()) return;
+    mp->GetVertex(index).mVelocity = toJphVec3(velocity);
+    JOLTC_TRY_END
+}
+
+JOLTC_API uint32_t JoltC_SoftBodyMotionProperties_GetVertexVelocities(const JoltC_SoftBodyMotionProperties* motionProperties, JoltC_Vec3* outVelocities, uint32_t capacity)
+{
+    if (!motionProperties || !outVelocities) return 0;
+    JOLTC_TRY_BEGIN
+    const SoftBodyMotionProperties* mp = asSBMP(motionProperties);
+    uint32_t count = (uint32_t)mp->GetVertices().size();
+    if (count > capacity) count = capacity;
+    for (uint32_t i = 0; i < count; i++)
+        outVelocities[i] = fromJphVec3(mp->GetVertex(i).mVelocity);
+    return count;
+    JOLTC_TRY_END
+    return 0;
+}
+
+JOLTC_API float JoltC_SoftBodyMotionProperties_GetVertexInvMass(const JoltC_SoftBodyMotionProperties* motionProperties, uint32_t index)
+{
+    if (!motionProperties) return 0.0f;
+    JOLTC_TRY_BEGIN
+    const SoftBodyMotionProperties* mp = asSBMP(motionProperties);
+    if (index >= mp->GetVertices().size()) return 0.0f;
+    return mp->GetVertex(index).mInvMass;
+    JOLTC_TRY_END
+    return 0.0f;
+}
+
+JOLTC_API void JoltC_SoftBodyMotionProperties_SetVertexInvMass(JoltC_SoftBodyMotionProperties* motionProperties, uint32_t index, float invMass)
+{
+    if (!motionProperties) return;
+    JOLTC_TRY_BEGIN
+    SoftBodyMotionProperties* mp = asSBMP(motionProperties);
+    if (index >= mp->GetVertices().size()) return;
+    mp->GetVertex(index).mInvMass = invMass;
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_SoftBodyMotionProperties_CalculateMassAndInertia(JoltC_SoftBodyMotionProperties* motionProperties)
+{
+    if (!motionProperties) return;
+    JOLTC_TRY_BEGIN
+    asSBMP(motionProperties)->CalculateMassAndInertia();
+    JOLTC_TRY_END
+}
+
+JOLTC_API uint32_t JoltC_SoftBodyMotionProperties_GetNumIterations(const JoltC_SoftBodyMotionProperties* motionProperties)
+{
+    if (!motionProperties) return 0;
+    return asSBMP(motionProperties)->GetNumIterations();
+}
+
+JOLTC_API void JoltC_SoftBodyMotionProperties_SetNumIterations(JoltC_SoftBodyMotionProperties* motionProperties, uint32_t numIterations)
+{
+    if (!motionProperties) return;
+    asSBMP(motionProperties)->SetNumIterations(numIterations);
+}
+
+JOLTC_API JoltC_Bool JoltC_SoftBodyMotionProperties_GetFacesDoubleSided(const JoltC_SoftBodyMotionProperties* motionProperties)
+{
+    if (!motionProperties) return JOLTC_FALSE;
+    return asSBMP(motionProperties)->GetFacesDoubleSided() ? JOLTC_TRUE : JOLTC_FALSE;
+}
+
+/* ========================================================================== */
+/*  Phase 2: skinning at runtime                                              */
+/* ========================================================================== */
+JOLTC_API void JoltC_SoftBodyMotionProperties_SkinVertices(
+    JoltC_SoftBodyMotionProperties* motionProperties,
+    const JoltC_Mat44* centerOfMassTransform,
+    const JoltC_Mat44* jointMatrices,
+    uint32_t numJoints,
+    JoltC_Bool hardSkinAll,
+    JoltC_TempAllocator* allocator)
+{
+    if (!motionProperties || !centerOfMassTransform || !jointMatrices || numJoints == 0 || !allocator) return;
+    JOLTC_TRY_BEGIN
+    Array<Mat44> joints;
+    joints.reserve(numJoints);
+    for (uint32_t i = 0; i < numJoints; i++)
+        joints.push_back(toJphMat44(jointMatrices[i]));
+    asSBMP(motionProperties)->SkinVertices(
+        RMat44(toJphMat44(*centerOfMassTransform)),
+        joints.data(), numJoints,
+        hardSkinAll != 0,
+        *allocator->ptr);
+    JOLTC_TRY_END
+}
+
+JOLTC_API JoltC_Bool JoltC_SoftBodyMotionProperties_GetEnableSkinConstraints(const JoltC_SoftBodyMotionProperties* motionProperties)
+{
+    if (!motionProperties) return JOLTC_FALSE;
+    return asSBMP(motionProperties)->GetEnableSkinConstraints() ? JOLTC_TRUE : JOLTC_FALSE;
+}
+
+JOLTC_API void JoltC_SoftBodyMotionProperties_SetEnableSkinConstraints(JoltC_SoftBodyMotionProperties* motionProperties, JoltC_Bool enable)
+{
+    if (!motionProperties) return;
+    asSBMP(motionProperties)->SetEnableSkinConstraints(enable != 0);
+}
+
+JOLTC_API float JoltC_SoftBodyMotionProperties_GetSkinnedMaxDistanceMultiplier(const JoltC_SoftBodyMotionProperties* motionProperties)
+{
+    if (!motionProperties) return 0.0f;
+    return asSBMP(motionProperties)->GetSkinnedMaxDistanceMultiplier();
+}
+
+JOLTC_API void JoltC_SoftBodyMotionProperties_SetSkinnedMaxDistanceMultiplier(JoltC_SoftBodyMotionProperties* motionProperties, float multiplier)
+{
+    if (!motionProperties) return;
+    asSBMP(motionProperties)->SetSkinnedMaxDistanceMultiplier(multiplier);
+}
+
+/* ========================================================================== */
+/*  Phase 2: stepping a soft body by hand                                     */
+/* ========================================================================== */
+JOLTC_API void JoltC_SoftBodyMotionProperties_CustomUpdate(
+    JoltC_SoftBodyMotionProperties* motionProperties,
+    float deltaTime,
+    JoltC_Body* body,
+    JoltC_PhysicsSystem* system)
+{
+    if (!motionProperties || !body || !system || !system->ptr) return;
+    JOLTC_TRY_BEGIN
+    asSBMP(motionProperties)->CustomUpdate(
+        deltaTime,
+        *reinterpret_cast<Body*>(body),
+        *system->ptr);
+    JOLTC_TRY_END
+}
+
 } /* extern "C" */

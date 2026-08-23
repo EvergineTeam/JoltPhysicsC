@@ -127,19 +127,23 @@ Phase 1 is done too: physics materials run end to end (`MeshShape_Create2` and
 `GetGroundMaterial` hand them back, and `JoltC_PhysicsMaterial*` became the same raw
 ref-counted cast as `JoltC_Shape*` so identity comparison works), plus shape introspection:
 the `GetTrianglesStart/Next` walk, `GetLeafShape`, `GetSubShapeUserData`, `GetSubmergedVolume`,
-and height field runtime deformation (`Get/SetHeights`, `Get/SetMaterials` per cell). Still
-open, in planned order:
+and height field runtime deformation (`Get/SetHeights`, `Get/SetMaterials` per cell).
+Phase 2 completed the soft body surface: `CreateConstraints2` takes per-vertex attributes (which
+is what finally creates LRA constraints), every constraint list can be built directly (edges,
+dihedral bends, volumes, LRA, Cosserat rods with their bend/twist coupling), skinning runs end to
+end (`AddInvBindMatrix`/`AddSkinnedConstraint`/`SkinVertices` and the runtime toggles), vertices
+are writable at runtime (position, velocity, inverse mass, plus `CalculateMassAndInertia`), the
+creation settings expose `mFacesDoubleSided`, `mCollisionGroup` and getters for everything, and
+`CustomUpdate` steps a body that lives outside the system. Still open, in planned order:
 
-1. Soft bodies: per-vertex attributes in `CreateConstraints` (today one attribute is broadcast
-   and LRA constraints can never be created), skinning, Cosserat rods, vertex write access.
-2. Determinism: `StateRecorder`, `PhysicsSystem::SaveState/RestoreState` and the per-object
+1. Determinism: `StateRecorder`, `PhysicsSystem::SaveState/RestoreState` and the per-object
    SaveState family.
-3. Constraints and vehicles: `PathConstraint` (its enum value exists and nothing else does),
+2. Constraints and vehicles: `PathConstraint` (its enum value exists and nothing else does),
    Pulley runtime accessors, vehicle step callbacks and the WheelWV slip fields.
-4. Character: the eight missing `CharacterContactListener` callbacks with the full
+3. Character: the eight missing `CharacterContactListener` callbacks with the full
    `CharacterContact` payload, custom character-vs-character procs, `mSupportingVolume`;
    `MotionProperties` completion; collectors with early-out.
-5. `DebugRenderer` through C procs.
+4. `DebugRenderer` through C procs.
 
 Deliberately out of scope unless asked for: hair simulation, the compute shader interface, and
 `ObjectStream` serialization.

@@ -51,6 +51,11 @@ add_executable(JoltC_Tests
     # and shape introspection: the triangle walk, leaf resolution, submerged volume and
     # runtime terrain deformation.
     test_phase1.c
+
+    # Phase 2: the complete soft body surface: per-vertex attributes and LRA, direct
+    # constraint construction, Cosserat rods, skinning, runtime vertex writes and
+    # CustomUpdate.
+    test_phase2.c
 )
 
 # The target carries its own public include directory, so nothing here needs to know where
