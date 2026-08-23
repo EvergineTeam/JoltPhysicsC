@@ -636,4 +636,142 @@ JOLTC_API void JoltC_MotionProperties_ScaleToMass(JoltC_MotionProperties* proper
     asMPMut(properties)->ScaleToMass(mass);
 }
 
+/* ========================================================================== */
+/*  Phase 5: the rest of MotionProperties                                     */
+/* ========================================================================== */
+JOLTC_API JoltC_MotionQuality JoltC_MotionProperties_GetMotionQuality(const JoltC_MotionProperties* properties) {
+    if (!properties) return (JoltC_MotionQuality)0;
+    return static_cast<JoltC_MotionQuality>(asMP(properties)->GetMotionQuality());
+}
+
+JOLTC_API JoltC_Bool JoltC_MotionProperties_GetAllowSleeping(const JoltC_MotionProperties* properties) {
+    if (!properties) return JOLTC_FALSE;
+    return asMP(properties)->GetAllowSleeping() ? JOLTC_TRUE : JOLTC_FALSE;
+}
+
+JOLTC_API float JoltC_MotionProperties_GetInverseMass(const JoltC_MotionProperties* properties) {
+    if (!properties) return 0.0f;
+    return asMP(properties)->GetInverseMass();
+}
+
+JOLTC_API JoltC_Vec3 JoltC_MotionProperties_GetLinearVelocity(const JoltC_MotionProperties* properties) {
+    if (!properties) return JoltC_Vec3{0, 0, 0};
+    return fromJphVec3(asMP(properties)->GetLinearVelocity());
+}
+
+JOLTC_API void JoltC_MotionProperties_SetLinearVelocity(JoltC_MotionProperties* properties, JoltC_Vec3 velocity) {
+    if (!properties) return;
+    asMPMut(properties)->SetLinearVelocity(toJphVec3(velocity));
+}
+
+JOLTC_API void JoltC_MotionProperties_SetLinearVelocityClamped(JoltC_MotionProperties* properties, JoltC_Vec3 velocity) {
+    if (!properties) return;
+    asMPMut(properties)->SetLinearVelocityClamped(toJphVec3(velocity));
+}
+
+JOLTC_API JoltC_Vec3 JoltC_MotionProperties_GetAngularVelocity(const JoltC_MotionProperties* properties) {
+    if (!properties) return JoltC_Vec3{0, 0, 0};
+    return fromJphVec3(asMP(properties)->GetAngularVelocity());
+}
+
+JOLTC_API void JoltC_MotionProperties_SetAngularVelocity(JoltC_MotionProperties* properties, JoltC_Vec3 velocity) {
+    if (!properties) return;
+    asMPMut(properties)->SetAngularVelocity(toJphVec3(velocity));
+}
+
+JOLTC_API void JoltC_MotionProperties_SetAngularVelocityClamped(JoltC_MotionProperties* properties, JoltC_Vec3 velocity) {
+    if (!properties) return;
+    asMPMut(properties)->SetAngularVelocityClamped(toJphVec3(velocity));
+}
+
+JOLTC_API float JoltC_MotionProperties_GetMaxLinearVelocity(const JoltC_MotionProperties* properties) {
+    if (!properties) return 0.0f;
+    return asMP(properties)->GetMaxLinearVelocity();
+}
+
+JOLTC_API void JoltC_MotionProperties_SetMaxLinearVelocity(JoltC_MotionProperties* properties, float velocity) {
+    if (!properties) return;
+    asMPMut(properties)->SetMaxLinearVelocity(velocity);
+}
+
+JOLTC_API float JoltC_MotionProperties_GetMaxAngularVelocity(const JoltC_MotionProperties* properties) {
+    if (!properties) return 0.0f;
+    return asMP(properties)->GetMaxAngularVelocity();
+}
+
+JOLTC_API void JoltC_MotionProperties_SetMaxAngularVelocity(JoltC_MotionProperties* properties, float velocity) {
+    if (!properties) return;
+    asMPMut(properties)->SetMaxAngularVelocity(velocity);
+}
+
+JOLTC_API void JoltC_MotionProperties_ClampLinearVelocity(JoltC_MotionProperties* properties) {
+    if (!properties) return;
+    asMPMut(properties)->ClampLinearVelocity();
+}
+
+JOLTC_API void JoltC_MotionProperties_ClampAngularVelocity(JoltC_MotionProperties* properties) {
+    if (!properties) return;
+    asMPMut(properties)->ClampAngularVelocity();
+}
+
+JOLTC_API float JoltC_MotionProperties_GetGravityFactor(const JoltC_MotionProperties* properties) {
+    if (!properties) return 0.0f;
+    return asMP(properties)->GetGravityFactor();
+}
+
+JOLTC_API void JoltC_MotionProperties_SetGravityFactor(JoltC_MotionProperties* properties, float factor) {
+    if (!properties) return;
+    asMPMut(properties)->SetGravityFactor(factor);
+}
+
+JOLTC_API uint32_t JoltC_MotionProperties_GetNumVelocityStepsOverride(const JoltC_MotionProperties* properties) {
+    if (!properties) return 0;
+    return asMP(properties)->GetNumVelocityStepsOverride();
+}
+
+JOLTC_API void JoltC_MotionProperties_SetNumVelocityStepsOverride(JoltC_MotionProperties* properties, uint32_t steps) {
+    if (!properties) return;
+    asMPMut(properties)->SetNumVelocityStepsOverride(steps);
+}
+
+JOLTC_API uint32_t JoltC_MotionProperties_GetNumPositionStepsOverride(const JoltC_MotionProperties* properties) {
+    if (!properties) return 0;
+    return asMP(properties)->GetNumPositionStepsOverride();
+}
+
+JOLTC_API void JoltC_MotionProperties_SetNumPositionStepsOverride(JoltC_MotionProperties* properties, uint32_t steps) {
+    if (!properties) return;
+    asMPMut(properties)->SetNumPositionStepsOverride(steps);
+}
+
+JOLTC_API JoltC_Vec3 JoltC_MotionProperties_GetAccumulatedForce(const JoltC_MotionProperties* properties) {
+    if (!properties) return JoltC_Vec3{0, 0, 0};
+    return fromJphVec3(asMP(properties)->GetAccumulatedForce());
+}
+
+JOLTC_API JoltC_Vec3 JoltC_MotionProperties_GetAccumulatedTorque(const JoltC_MotionProperties* properties) {
+    if (!properties) return JoltC_Vec3{0, 0, 0};
+    return fromJphVec3(asMP(properties)->GetAccumulatedTorque());
+}
+
+JOLTC_API void JoltC_MotionProperties_ResetForce(JoltC_MotionProperties* properties) {
+    if (!properties) return;
+    asMPMut(properties)->ResetForce();
+}
+
+JOLTC_API void JoltC_MotionProperties_ResetTorque(JoltC_MotionProperties* properties) {
+    if (!properties) return;
+    asMPMut(properties)->ResetTorque();
+}
+
+JOLTC_API JoltC_Vec3 JoltC_MotionProperties_GetPointVelocityCOM(const JoltC_MotionProperties* properties, JoltC_Vec3 pointRelativeToCOM) {
+    if (!properties) return JoltC_Vec3{0, 0, 0};
+    return fromJphVec3(asMP(properties)->GetPointVelocityCOM(toJphVec3(pointRelativeToCOM)));
+}
+
+JOLTC_API void JoltC_MotionProperties_GetLocalSpaceInverseInertia(const JoltC_MotionProperties* properties, JoltC_Mat44* result) {
+    if (!properties || !result) return;
+    *result = fromJphMat44(asMP(properties)->GetLocalSpaceInverseInertia());
+}
+
 } /* extern "C" */

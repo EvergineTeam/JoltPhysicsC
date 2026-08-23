@@ -12,6 +12,8 @@
 #include <Jolt/Physics/Collision/CollideShape.h>
 #include <Jolt/Physics/Collision/CollisionCollectorImpl.h>
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseQuery.h>
+#include <Jolt/Physics/Collision/AABoxCast.h>
+#include <Jolt/Geometry/OrientedBox.h>
 
 #include "errors_internal.h"
 #include "internal.h"
@@ -605,6 +607,143 @@ JOLTC_API JoltC_RVec3 JoltC_ContactManifold_GetWorldSpaceContactPointOn1(const J
 JOLTC_API JoltC_RVec3 JoltC_ContactManifold_GetWorldSpaceContactPointOn2(const JoltC_ContactManifold* manifold, uint32_t index) {
     if (!manifold) { JoltC_RVec3 r = {0,0,0}; return r; }
     return fromJphRVec3(asManifold(manifold)->GetWorldSpaceContactPointOn2(index));
+}
+
+/* ========================================================================== */
+/*  Phase 5: internal edge removal, closest-hit cast, broad phase additions   */
+/* ========================================================================== */
+JOLTC_API void JoltC_NarrowPhaseQuery_CollideShapeWithInternalEdgeRemoval(
+    const JoltC_NarrowPhaseQuery* query,
+    const JoltC_Shape* shape,
+    JoltC_Vec3 scale,
+    JoltC_Mat44 centerOfMassTransform,
+    const JoltC_CollideShapeSettings* collideSettings,
+    JoltC_RVec3 baseOffset,
+    JoltC_CollideShapeResultFn callback, void* userData,
+    const JoltC_BroadPhaseLayerFilter* bpFilter,
+    const JoltC_ObjectLayerFilter* olFilter,
+    const JoltC_BodyFilter* bodyFilter,
+    const JoltC_ShapeFilter* shapeFilter)
+{
+    if (!query || !shape || !callback) return;
+    JOLTC_TRY_BEGIN
+    const auto* jphShape = reinterpret_cast<const Shape*>(shape);
+    RMat44 com = toJphMat44FromBlittable(centerOfMassTransform);
+
+    CollideShapeSettings settings;
+    if (collideSettings)
+    {
+        settings.mBackFaceMode = toJphBackFaceMode(collideSettings->backFaceMode);
+        settings.mMaxSeparationDistance = collideSettings->maxSeparationDistance;
+        settings.mCollisionTolerance = collideSettings->collisionTolerance;
+        settings.mPenetrationTolerance = collideSettings->penetrationTolerance;
+        settings.mInternalEdgeRemovalVertexToleranceSq = collideSettings->internalEdgeRemovalVertexToleranceSq;
+    }
+
+    CollideShapeCallbackCollector collector;
+    collector.fn = callback;
+    collector.userData = userData;
+    query->ptr->CollideShapeWithInternalEdgeRemoval(jphShape, toJphVec3(scale), com, settings,
+                                                    toJphRVec3(baseOffset), collector,
+                                                    bpf(bpFilter), olf(olFilter), bf(bodyFilter), sf(shapeFilter));
+    JOLTC_TRY_END
+}
+
+JOLTC_API JoltC_Bool JoltC_NarrowPhaseQuery_CastShapeClosest(
+    const JoltC_NarrowPhaseQuery* query,
+    const JoltC_Shape* shape,
+    JoltC_Vec3 scale,
+    JoltC_Mat44 centerOfMassTransform,
+    JoltC_Vec3 direction,
+    const JoltC_ShapeCastSettings* castSettings,
+    JoltC_RVec3 baseOffset,
+    JoltC_ShapeCastResult* outResult,
+    const JoltC_BroadPhaseLayerFilter* bpFilter,
+    const JoltC_ObjectLayerFilter* olFilter,
+    const JoltC_BodyFilter* bodyFilter,
+    const JoltC_ShapeFilter* shapeFilter)
+{
+    if (!query || !shape || !outResult) return JOLTC_FALSE;
+    JOLTC_TRY_BEGIN
+    const auto* jphShape = reinterpret_cast<const Shape*>(shape);
+    RMat44 com = toJphMat44FromBlittable(centerOfMassTransform);
+    RShapeCast shapeCast(jphShape, toJphVec3(scale), com, toJphVec3(direction));
+
+    ShapeCastSettings settings;
+    if (castSettings)
+    {
+        settings.mBackFaceModeTriangles = toJphBackFaceMode(castSettings->backFaceModeTriangles);
+        settings.mBackFaceModeConvex = toJphBackFaceMode(castSettings->backFaceModeConvex);
+        settings.mUseShrunkenShapeAndConvexRadius = castSettings->useShrunkenShapeAndConvexRadius != 0;
+        settings.mReturnDeepestPoint = castSettings->returnDeepestPoint != 0;
+        settings.mCollisionTolerance = castSettings->collisionTolerance;
+        settings.mPenetrationTolerance = castSettings->penetrationTolerance;
+        settings.mExtraConvexRadius = castSettings->extraConvexRadius;
+    }
+
+    /* Jolt's own closest-hit collector: its early-out shortens the sweep as hits land, which is
+     * what makes this the efficient form of "what do I hit first". */
+    ClosestHitCollisionCollector<CastShapeCollector> collector;
+    query->ptr->CastShape(shapeCast, settings, toJphRVec3(baseOffset), collector,
+                          bpf(bpFilter), olf(olFilter), bf(bodyFilter), sf(shapeFilter));
+
+    if (!collector.HadHit())
+        return JOLTC_FALSE;
+
+    *outResult = fromJphShapeCastResult(collector.mHit);
+    return JOLTC_TRUE;
+    JOLTC_TRY_END
+    return JOLTC_FALSE;
+}
+
+/* CastAABox reports through the shape-cast body collector, a different base than the ray one. */
+class BroadPhaseCastBoxCollector final : public CastShapeBodyCollector {
+public:
+    JoltC_BroadPhaseCastResultFn fn;
+    void* userData;
+    void AddHit(const BroadPhaseCastResult& hit) override {
+        JoltC_BroadPhaseCastResult r;
+        r.bodyID = hit.mBodyID.GetIndexAndSequenceNumber();
+        r.fraction = hit.mFraction;
+        fn(userData, &r);
+    }
+};
+
+JOLTC_API void JoltC_BroadPhaseQuery_CastAABox(
+    const JoltC_BroadPhaseQuery* query,
+    JoltC_AABox box,
+    JoltC_Vec3 direction,
+    JoltC_BroadPhaseCastResultFn callback, void* userData,
+    const JoltC_BroadPhaseLayerFilter* bpFilter,
+    const JoltC_ObjectLayerFilter* olFilter)
+{
+    if (!query || !callback) return;
+    JOLTC_TRY_BEGIN
+    AABoxCast cast;
+    cast.mBox = AABox(toJphVec3(box.min), toJphVec3(box.max));
+    cast.mDirection = toJphVec3(direction);
+    BroadPhaseCastBoxCollector collector;
+    collector.fn = callback;
+    collector.userData = userData;
+    query->ptr->CastAABox(cast, collector, bpf(bpFilter), olf(olFilter));
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_BroadPhaseQuery_CollideOrientedBox(
+    const JoltC_BroadPhaseQuery* query,
+    const JoltC_OrientedBox* box,
+    JoltC_CollideShapeBodyResultFn callback, void* userData,
+    const JoltC_BroadPhaseLayerFilter* bpFilter,
+    const JoltC_ObjectLayerFilter* olFilter)
+{
+    if (!query || !box || !callback) return;
+    JOLTC_TRY_BEGIN
+    OrientedBox oriented(Mat44(toJphMat44FromBlittable(box->orientation)), toJphVec3(box->halfExtents));
+    BroadPhaseCollideBodyCollector collector;
+    collector.fn = callback;
+    collector.userData = userData;
+    query->ptr->CollideOrientedBox(oriented, collector, bpf(bpFilter), olf(olFilter));
+    JOLTC_TRY_END
 }
 
 } /* extern "C" */

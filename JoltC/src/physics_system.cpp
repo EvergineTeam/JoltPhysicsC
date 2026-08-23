@@ -7,6 +7,8 @@
 #include <Jolt/Core/JobSystemThreadPool.h>
 #include <Jolt/Core/Color.h>
 #include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/Physics/Collision/EstimateCollisionResponse.h>
+#include <Jolt/Core/JobSystemSingleThreaded.h>
 #include <Jolt/Physics/PhysicsSettings.h>
 #include <Jolt/Physics/Collision/ObjectLayerPairFilterTable.h>
 #include <Jolt/Physics/Collision/ObjectLayerPairFilterMask.h>
@@ -948,6 +950,161 @@ JOLTC_API JoltC_SoftBodyCreationSettings* JoltC_SoftBodyCreationSettings_Create(
 JOLTC_API void JoltC_SoftBodyCreationSettings_Destroy(JoltC_SoftBodyCreationSettings* settings)
 {
     delete reinterpret_cast<JoltC_SoftBodyCreationSettings_Impl*>(settings);
+}
+
+/* ========================================================================== */
+/*  Phase 5: system introspection, combine functions, allocators              */
+/* ========================================================================== */
+JOLTC_API void JoltC_PhysicsSystem_GetBounds(const JoltC_PhysicsSystem* system, JoltC_AABox* outBounds)
+{
+    if (!system || !system->ptr || !outBounds) return;
+    JOLTC_TRY_BEGIN
+    AABox bounds = system->ptr->GetBounds();
+    outBounds->min = fromJphVec3(bounds.mMin);
+    outBounds->max = fromJphVec3(bounds.mMax);
+    JOLTC_TRY_END
+}
+
+JOLTC_API uint32_t JoltC_PhysicsSystem_GetActiveBodies(const JoltC_PhysicsSystem* system, int bodyType, JoltC_BodyID* outBodies, uint32_t capacity)
+{
+    if (!system || !system->ptr) return 0;
+    JOLTC_TRY_BEGIN
+    BodyIDVector bodies;
+    system->ptr->GetActiveBodies(static_cast<EBodyType>(bodyType), bodies);
+    uint32_t total = (uint32_t)bodies.size();
+    if (outBodies && capacity > 0)
+    {
+        uint32_t toCopy = total < capacity ? total : capacity;
+        for (uint32_t i = 0; i < toCopy; i++)
+            outBodies[i] = bodies[i].GetIndexAndSequenceNumber();
+    }
+    return total;
+    JOLTC_TRY_END
+    return 0;
+}
+
+JOLTC_API void JoltC_PhysicsSystem_GetBodyStats(const JoltC_PhysicsSystem* system, JoltC_BodyStats* outStats)
+{
+    if (!system || !system->ptr || !outStats) return;
+    JOLTC_TRY_BEGIN
+    BodyManager::BodyStats stats = system->ptr->GetBodyStats();
+    outStats->numBodies = stats.mNumBodies;
+    outStats->maxBodies = stats.mMaxBodies;
+    outStats->numBodiesStatic = stats.mNumBodiesStatic;
+    outStats->numBodiesDynamic = stats.mNumBodiesDynamic;
+    outStats->numActiveBodiesDynamic = stats.mNumActiveBodiesDynamic;
+    outStats->numBodiesKinematic = stats.mNumBodiesKinematic;
+    outStats->numActiveBodiesKinematic = stats.mNumActiveBodiesKinematic;
+    outStats->numSoftBodies = stats.mNumSoftBodies;
+    outStats->numActiveSoftBodies = stats.mNumActiveSoftBodies;
+    JOLTC_TRY_END
+}
+
+/* Jolt stores a bare function pointer for the combine functions -- no user data slot -- so the C
+ * bridge is a pair of process-wide trampolines. The default is captured the first time either
+ * setter runs, so passing null restores Jolt's own behaviour. */
+static JoltC_CombineFunctionFn s_combineFrictionFn = nullptr;
+static JoltC_CombineFunctionFn s_combineRestitutionFn = nullptr;
+static ContactConstraintManager::CombineFunction s_defaultCombineFriction = nullptr;
+static ContactConstraintManager::CombineFunction s_defaultCombineRestitution = nullptr;
+
+static float combineFrictionTrampoline(const Body& inBody1, const SubShapeID& inSubShapeID1, const Body& inBody2, const SubShapeID& inSubShapeID2)
+{
+    return s_combineFrictionFn(
+        reinterpret_cast<const JoltC_Body*>(&inBody1), inSubShapeID1.GetValue(),
+        reinterpret_cast<const JoltC_Body*>(&inBody2), inSubShapeID2.GetValue());
+}
+
+static float combineRestitutionTrampoline(const Body& inBody1, const SubShapeID& inSubShapeID1, const Body& inBody2, const SubShapeID& inSubShapeID2)
+{
+    return s_combineRestitutionFn(
+        reinterpret_cast<const JoltC_Body*>(&inBody1), inSubShapeID1.GetValue(),
+        reinterpret_cast<const JoltC_Body*>(&inBody2), inSubShapeID2.GetValue());
+}
+
+JOLTC_API void JoltC_PhysicsSystem_SetCombineFriction(JoltC_PhysicsSystem* system, JoltC_CombineFunctionFn combine)
+{
+    if (!system || !system->ptr) return;
+    JOLTC_TRY_BEGIN
+    if (!s_defaultCombineFriction)
+        s_defaultCombineFriction = system->ptr->GetCombineFriction();
+    s_combineFrictionFn = combine;
+    system->ptr->SetCombineFriction(combine ? combineFrictionTrampoline : s_defaultCombineFriction);
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_PhysicsSystem_SetCombineRestitution(JoltC_PhysicsSystem* system, JoltC_CombineFunctionFn combine)
+{
+    if (!system || !system->ptr) return;
+    JOLTC_TRY_BEGIN
+    if (!s_defaultCombineRestitution)
+        s_defaultCombineRestitution = system->ptr->GetCombineRestitution();
+    s_combineRestitutionFn = combine;
+    system->ptr->SetCombineRestitution(combine ? combineRestitutionTrampoline : s_defaultCombineRestitution);
+    JOLTC_TRY_END
+}
+
+JOLTC_API JoltC_TempAllocator* JoltC_TempAllocatorMalloc_Create(void)
+{
+    JOLTC_TRY_BEGIN
+    auto* w = new JoltC_TempAllocator;
+    w->ptr = std::make_unique<TempAllocatorMalloc>();
+    return w;
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API JoltC_JobSystem* JoltC_JobSystemSingleThreaded_Create(uint32_t maxJobs)
+{
+    JOLTC_TRY_BEGIN
+    auto* w = new JoltC_JobSystem;
+    w->ptr = std::make_unique<JobSystemSingleThreaded>(maxJobs);
+    return w;
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API void JoltC_EstimateCollisionResponse(
+    const JoltC_Body* body1,
+    const JoltC_Body* body2,
+    const JoltC_ContactManifold* manifold,
+    float combinedFriction,
+    float combinedRestitution,
+    float minVelocityForRestitution,
+    uint32_t numIterations,
+    JoltC_CollisionEstimationResult* outResult,
+    float* outContactImpulses,
+    uint32_t impulseCapacity,
+    uint32_t* outImpulseCount)
+{
+    if (!body1 || !body2 || !manifold || !outResult) return;
+    JOLTC_TRY_BEGIN
+    CollisionEstimationResult result;
+    EstimateCollisionResponse(
+        *reinterpret_cast<const Body*>(body1),
+        *reinterpret_cast<const Body*>(body2),
+        *reinterpret_cast<const ContactManifold*>(manifold),
+        result,
+        combinedFriction,
+        combinedRestitution,
+        minVelocityForRestitution,
+        numIterations);
+
+    outResult->linearVelocity1 = fromJphVec3(result.mLinearVelocity1);
+    outResult->angularVelocity1 = fromJphVec3(result.mAngularVelocity1);
+    outResult->linearVelocity2 = fromJphVec3(result.mLinearVelocity2);
+    outResult->angularVelocity2 = fromJphVec3(result.mAngularVelocity2);
+
+    uint32_t total = (uint32_t)result.mContactImpulse.size();
+    if (outContactImpulses && impulseCapacity > 0)
+    {
+        uint32_t toCopy = total < impulseCapacity ? total : impulseCapacity;
+        for (uint32_t i = 0; i < toCopy; i++)
+            outContactImpulses[i] = result.mContactImpulse[i];
+    }
+    if (outImpulseCount)
+        *outImpulseCount = total;
+    JOLTC_TRY_END
 }
 
 } /* extern "C" */

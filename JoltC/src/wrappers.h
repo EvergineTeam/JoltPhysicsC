@@ -49,15 +49,18 @@ using namespace JPH;
 /* -------------------------------------------------------------------------- */
 /*  TempAllocator wrapper                                                     */
 /* -------------------------------------------------------------------------- */
+/* Widened to the base since phase 5: the handle may hold the fixed-size TempAllocatorImpl or
+ * TempAllocatorMalloc, and every consumer only needs TempAllocator&. */
 struct JoltC_TempAllocator {
-    std::unique_ptr<TempAllocatorImpl> ptr;
+    std::unique_ptr<TempAllocator> ptr;
 };
 
 /* -------------------------------------------------------------------------- */
 /*  JobSystem wrapper                                                         */
 /* -------------------------------------------------------------------------- */
+/* Widened to the base since phase 5: thread pool or single threaded, per creation call. */
 struct JoltC_JobSystem {
-    std::unique_ptr<JobSystemThreadPool> ptr;
+    std::unique_ptr<JobSystem> ptr;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -285,8 +288,133 @@ public:
     }
 };
 
+/* The complete listener (phase 5): all eleven virtuals with the full CharacterContact payload,
+ * including the character-versus-character family and the two solve hooks. */
+inline void fillCharacterContact(const CharacterContact& in, JoltC_CharacterContact& out)
+{
+    out.bodyB = in.mBodyB.GetIndexAndSequenceNumber();
+    out.characterIDB = in.mCharacterIDB.GetValue();
+    out.subShapeIDB = in.mSubShapeIDB.GetValue();
+    out.position.x = (float)in.mPosition.GetX();
+    out.position.y = (float)in.mPosition.GetY();
+    out.position.z = (float)in.mPosition.GetZ();
+    out.linearVelocity = JoltC_Vec3{ in.mLinearVelocity.GetX(), in.mLinearVelocity.GetY(), in.mLinearVelocity.GetZ() };
+    out.contactNormal = JoltC_Vec3{ in.mContactNormal.GetX(), in.mContactNormal.GetY(), in.mContactNormal.GetZ() };
+    out.surfaceNormal = JoltC_Vec3{ in.mSurfaceNormal.GetX(), in.mSurfaceNormal.GetY(), in.mSurfaceNormal.GetZ() };
+    out.distance = in.mDistance;
+    out.fraction = in.mFraction;
+    out.motionTypeB = static_cast<JoltC_MotionType>(in.mMotionTypeB);
+    out.isSensorB = in.mIsSensorB ? JOLTC_TRUE : JOLTC_FALSE;
+    out.userDataB = in.mUserData;
+    out.materialB = reinterpret_cast<const JoltC_PhysicsMaterial*>(in.mMaterial);
+    out.isBackFacingContact = in.mIsBackFacingContact ? JOLTC_TRUE : JOLTC_FALSE;
+}
+
+class CharacterContactListenerCallbackV2 final : public CharacterContactListener {
+public:
+    JoltC_CharacterContactListener_ProcsV2 procs {};
+    void* userData = nullptr;
+
+    void OnAdjustBodyVelocity(const CharacterVirtual*, const Body& inBody2, Vec3& ioLinearVelocity, Vec3& ioAngularVelocity) override {
+        if (!procs.onAdjustBodyVelocity) return;
+        JoltC_Vec3 linear = { ioLinearVelocity.GetX(), ioLinearVelocity.GetY(), ioLinearVelocity.GetZ() };
+        JoltC_Vec3 angular = { ioAngularVelocity.GetX(), ioAngularVelocity.GetY(), ioAngularVelocity.GetZ() };
+        procs.onAdjustBodyVelocity(userData, reinterpret_cast<const JoltC_Body*>(&inBody2), &linear, &angular);
+        ioLinearVelocity = Vec3(linear.x, linear.y, linear.z);
+        ioAngularVelocity = Vec3(angular.x, angular.y, angular.z);
+    }
+
+    bool OnContactValidate(const CharacterVirtual*, const CharacterContact& inContact) override {
+        return Validate(procs.onContactValidate, inContact);
+    }
+    bool OnCharacterContactValidate(const CharacterVirtual*, const CharacterContact& inContact) override {
+        return Validate(procs.onCharacterContactValidate, inContact);
+    }
+    void OnContactAdded(const CharacterVirtual*, const CharacterContact& inContact, CharacterContactSettings& ioSettings) override {
+        Event(procs.onContactAdded, inContact, ioSettings);
+    }
+    void OnContactPersisted(const CharacterVirtual*, const CharacterContact& inContact, CharacterContactSettings& ioSettings) override {
+        Event(procs.onContactPersisted, inContact, ioSettings);
+    }
+    void OnCharacterContactAdded(const CharacterVirtual*, const CharacterContact& inContact, CharacterContactSettings& ioSettings) override {
+        Event(procs.onCharacterContactAdded, inContact, ioSettings);
+    }
+    void OnCharacterContactPersisted(const CharacterVirtual*, const CharacterContact& inContact, CharacterContactSettings& ioSettings) override {
+        Event(procs.onCharacterContactPersisted, inContact, ioSettings);
+    }
+
+    void OnContactRemoved(const CharacterVirtual*, const BodyID& inBodyID2, const SubShapeID& inSubShapeID2) override {
+        if (procs.onContactRemoved)
+            procs.onContactRemoved(userData, inBodyID2.GetIndexAndSequenceNumber(), inSubShapeID2.GetValue());
+    }
+    void OnCharacterContactRemoved(const CharacterVirtual*, const CharacterID& inOtherCharacterID, const SubShapeID& inSubShapeID2) override {
+        if (procs.onCharacterContactRemoved)
+            procs.onCharacterContactRemoved(userData, inOtherCharacterID.GetValue(), inSubShapeID2.GetValue());
+    }
+
+    void OnContactSolve(const CharacterVirtual*, const BodyID& inBodyID2, const SubShapeID& inSubShapeID2,
+                        RVec3Arg inContactPosition, Vec3Arg inContactNormal, Vec3Arg inContactVelocity,
+                        const PhysicsMaterial* inContactMaterial, Vec3Arg inCharacterVelocity, Vec3& ioNewCharacterVelocity) override {
+        Solve(procs.onContactSolve, inBodyID2.GetIndexAndSequenceNumber(), CharacterID::cInvalidCharacterID,
+              inSubShapeID2, inContactPosition, inContactNormal, inContactVelocity, inContactMaterial,
+              inCharacterVelocity, ioNewCharacterVelocity);
+    }
+    void OnCharacterContactSolve(const CharacterVirtual*, const CharacterVirtual* inOtherCharacter, const SubShapeID& inSubShapeID2,
+                                 RVec3Arg inContactPosition, Vec3Arg inContactNormal, Vec3Arg inContactVelocity,
+                                 const PhysicsMaterial* inContactMaterial, Vec3Arg inCharacterVelocity, Vec3& ioNewCharacterVelocity) override {
+        Solve(procs.onCharacterContactSolve, BodyID().GetIndexAndSequenceNumber(),
+              inOtherCharacter ? inOtherCharacter->GetID().GetValue() : CharacterID::cInvalidCharacterID,
+              inSubShapeID2, inContactPosition, inContactNormal, inContactVelocity, inContactMaterial,
+              inCharacterVelocity, ioNewCharacterVelocity);
+    }
+
+private:
+    bool Validate(JoltC_OnCharacterContactValidate2Fn fn, const CharacterContact& inContact) {
+        if (!fn) return true;
+        JoltC_CharacterContact contact;
+        fillCharacterContact(inContact, contact);
+        JoltC_Bool accept = JOLTC_TRUE;
+        fn(userData, &contact, &accept);
+        return accept != 0;
+    }
+
+    void Event(JoltC_OnCharacterContactEvent2Fn fn, const CharacterContact& inContact, CharacterContactSettings& ioSettings) {
+        if (!fn) return;
+        JoltC_CharacterContact contact;
+        fillCharacterContact(inContact, contact);
+        JoltC_Bool canPush = ioSettings.mCanPushCharacter ? JOLTC_TRUE : JOLTC_FALSE;
+        JoltC_Bool canImpulse = ioSettings.mCanReceiveImpulses ? JOLTC_TRUE : JOLTC_FALSE;
+        fn(userData, &contact, &canPush, &canImpulse);
+        ioSettings.mCanPushCharacter = canPush != 0;
+        ioSettings.mCanReceiveImpulses = canImpulse != 0;
+    }
+
+    void Solve(JoltC_OnCharacterContactSolveFn fn, uint32_t bodyId, uint32_t characterId, const SubShapeID& inSubShapeID2,
+               RVec3Arg inContactPosition, Vec3Arg inContactNormal, Vec3Arg inContactVelocity,
+               const PhysicsMaterial* inContactMaterial, Vec3Arg inCharacterVelocity, Vec3& ioNewCharacterVelocity) {
+        if (!fn) return;
+        JoltC_RVec3 position;
+        position.x = (float)inContactPosition.GetX();
+        position.y = (float)inContactPosition.GetY();
+        position.z = (float)inContactPosition.GetZ();
+        JoltC_Vec3 normal = { inContactNormal.GetX(), inContactNormal.GetY(), inContactNormal.GetZ() };
+        JoltC_Vec3 contactVelocity = { inContactVelocity.GetX(), inContactVelocity.GetY(), inContactVelocity.GetZ() };
+        JoltC_Vec3 characterVelocity = { inCharacterVelocity.GetX(), inCharacterVelocity.GetY(), inCharacterVelocity.GetZ() };
+        JoltC_Vec3 newVelocity = { ioNewCharacterVelocity.GetX(), ioNewCharacterVelocity.GetY(), ioNewCharacterVelocity.GetZ() };
+        fn(userData, bodyId, characterId, inSubShapeID2.GetValue(), position, normal, contactVelocity,
+           reinterpret_cast<const JoltC_PhysicsMaterial*>(inContactMaterial), characterVelocity, &newVelocity);
+        ioNewCharacterVelocity = Vec3(newVelocity.x, newVelocity.y, newVelocity.z);
+    }
+};
+
 struct JoltC_CharacterContactListener {
-    std::unique_ptr<CharacterContactListenerCallback> ptr;
+    std::unique_ptr<CharacterContactListenerCallback> ptr;      /* v1: the three classic events */
+    std::unique_ptr<CharacterContactListenerCallbackV2> ptrV2;  /* v2: all eleven */
+
+    CharacterContactListener* get() const {
+        return ptr ? static_cast<CharacterContactListener*>(ptr.get())
+                   : static_cast<CharacterContactListener*>(ptrV2.get());
+    }
 };
 
 /* -------------------------------------------------------------------------- */

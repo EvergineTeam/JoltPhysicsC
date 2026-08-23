@@ -38,6 +38,8 @@ JOLTC_API void JoltC_CharacterVirtualSettings_SetDefault(JoltC_CharacterVirtualS
     s->maxSlopeAngle = 50.0f * (3.14159265358979323846f / 180.0f);
     s->enhancedInternalEdgeRemoval = JOLTC_FALSE;
     s->shape = nullptr;
+    s->supportingVolumeNormal = JoltC_Vec3{0, 1, 0};
+    s->supportingVolumeConstant = -1.0e10f; /* Jolt's own default: accept any contact */
     s->mass = 70.0f;
     s->maxStrength = 100.0f;
     s->shapeOffset = JoltC_Vec3{0, 0, 0};
@@ -86,6 +88,21 @@ JOLTC_API JoltC_CharacterContactListener* JoltC_CharacterContactListener_Create(
     return nullptr;
 }
 
+JOLTC_API JoltC_CharacterContactListener* JoltC_CharacterContactListener_Create2(
+    const JoltC_CharacterContactListener_ProcsV2* procs,
+    void* userData)
+{
+    if (!procs) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* wrapper = new JoltC_CharacterContactListener();
+    wrapper->ptrV2 = std::make_unique<CharacterContactListenerCallbackV2>();
+    wrapper->ptrV2->procs = *procs;
+    wrapper->ptrV2->userData = userData;
+    return wrapper;
+    JOLTC_TRY_END
+    return nullptr;
+}
+
 JOLTC_API void JoltC_CharacterContactListener_Destroy(JoltC_CharacterContactListener* listener) {
     delete listener;
 }
@@ -106,6 +123,7 @@ JOLTC_API JoltC_CharacterVirtual* JoltC_CharacterVirtual_Create(
     settings.mMaxSlopeAngle = s->maxSlopeAngle;
     settings.mEnhancedInternalEdgeRemoval = s->enhancedInternalEdgeRemoval != 0;
     settings.mShape = reinterpret_cast<const Shape*>(s->shape);
+    settings.mSupportingVolume = Plane(toJphVec3(s->supportingVolumeNormal), s->supportingVolumeConstant);
     settings.mMass = s->mass;
     settings.mMaxStrength = s->maxStrength;
     settings.mShapeOffset = toJphVec3(s->shapeOffset);
@@ -146,7 +164,7 @@ JOLTC_API void JoltC_CharacterVirtual_SetListener(JoltC_CharacterVirtual* c, Jol
     if (!c) return;
     JOLTC_TRY_BEGIN
     c->listener = listener;
-    cv(c)->SetListener(listener ? listener->ptr.get() : nullptr);
+    cv(c)->SetListener(listener ? listener->get() : nullptr);
     JOLTC_TRY_END
 }
 
@@ -200,6 +218,15 @@ JOLTC_API JoltC_Vec3 JoltC_CharacterVirtual_GetGroundNormal(const JoltC_Characte
 JOLTC_API JoltC_Vec3 JoltC_CharacterVirtual_GetGroundVelocity(const JoltC_CharacterVirtual* c) { JoltC_Vec3 z={0,0,0}; if (!c) return z; JOLTC_TRY_BEGIN return fromJphVec3(cv(c)->GetGroundVelocity()); JOLTC_TRY_END return z; }
 JOLTC_API JoltC_BodyID JoltC_CharacterVirtual_GetGroundBodyID(const JoltC_CharacterVirtual* c) { if (!c) return JOLTC_BODY_ID_INVALID; JOLTC_TRY_BEGIN return fromJphBodyID(cv(c)->GetGroundBodyID()); JOLTC_TRY_END return JOLTC_BODY_ID_INVALID; }
 JOLTC_API const JoltC_PhysicsMaterial* JoltC_CharacterVirtual_GetGroundMaterial(const JoltC_CharacterVirtual* c) { if (!c) return nullptr; JOLTC_TRY_BEGIN return fromPhysicsMaterial(cv(c)->GetGroundMaterial()); JOLTC_TRY_END return nullptr; }
+JOLTC_API void JoltC_CharacterVirtual_SetSupportingVolume(JoltC_CharacterVirtual* c, JoltC_Vec3 normal, float constant) { if (!c) return; JOLTC_TRY_BEGIN cv(c)->SetSupportingVolume(Plane(toJphVec3(normal), constant)); JOLTC_TRY_END }
+JOLTC_API void JoltC_CharacterVirtual_GetSupportingVolume(const JoltC_CharacterVirtual* c, JoltC_Vec3* outNormal, float* outConstant) {
+    if (!c) return;
+    JOLTC_TRY_BEGIN
+    const Plane& plane = cv(c)->GetSupportingVolume();
+    if (outNormal) *outNormal = fromJphVec3(plane.GetNormal());
+    if (outConstant) *outConstant = plane.GetConstant();
+    JOLTC_TRY_END
+}
 
 JOLTC_API JoltC_Vec3 JoltC_CharacterVirtual_GetUp(const JoltC_CharacterVirtual* c) { JoltC_Vec3 z={0,0,0}; if (!c) return z; JOLTC_TRY_BEGIN return fromJphVec3(cv(c)->GetUp()); JOLTC_TRY_END return z; }
 JOLTC_API void JoltC_CharacterVirtual_SetUp(JoltC_CharacterVirtual* c, JoltC_Vec3 up) { if (!c) return; JOLTC_TRY_BEGIN cv(c)->SetUp(toJphVec3(up)); JOLTC_TRY_END }

@@ -65,6 +65,11 @@ add_executable(JoltC_Tests
     # Phase 4: the PathConstraint end to end, pulley rope control, ratio arithmetic,
     # body-space motor targets, vehicle step callbacks and tire telemetry.
     test_phase4.c
+
+    # Phase 5: the complete character contact listener, supporting volume, the rest of
+    # MotionProperties, closest-hit casts, internal edge removal, broad phase boxes,
+    # the system census, combine functions, alternative allocators and response estimation.
+    test_phase5.c
 )
 
 # The target carries its own public include directory, so nothing here needs to know where

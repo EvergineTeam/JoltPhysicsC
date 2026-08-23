@@ -137,4 +137,10 @@ void run_phase3_tests(void);
  * the three vehicle step callbacks and the tire telemetry fields. */
 void run_phase4_tests(void);
 
+/* Phase 5: character and system to one hundred percent: the full contact listener with the
+ * character-versus-character family, supporting volume, MotionProperties completion, closest-hit
+ * casts, internal edge removal, broad phase boxes, the census, combine functions, alternative
+ * allocators and collision response estimation. */
+void run_phase5_tests(void);
+
 #endif /* TEST_COMMON_H */
