@@ -127,4 +127,9 @@ void run_phase1_tests(void);
  * hand-stepped bodies via CustomUpdate. */
 void run_phase2_tests(void);
 
+/* Phase 3: determinism and state: StateRecorder in memory, whole-system rollback that replays to
+ * bit-identical state, byte-shipped snapshots, single-body state, and the character that saves
+ * alongside the world because the system snapshot cannot see it. */
+void run_phase3_tests(void);
+
 #endif /* TEST_COMMON_H */

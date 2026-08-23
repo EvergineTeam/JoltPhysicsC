@@ -134,16 +134,19 @@ dihedral bends, volumes, LRA, Cosserat rods with their bend/twist coupling), ski
 end (`AddInvBindMatrix`/`AddSkinnedConstraint`/`SkinVertices` and the runtime toggles), vertices
 are writable at runtime (position, velocity, inverse mass, plus `CalculateMassAndInertia`), the
 creation settings expose `mFacesDoubleSided`, `mCollisionGroup` and getters for everything, and
-`CustomUpdate` steps a body that lives outside the system. Still open, in planned order:
+`CustomUpdate` steps a body that lives outside the system.
+Phase 3 covered determinism and state: `StateRecorderImpl` in memory (with byte-level
+`CopyData`/`SetData` for shipping snapshots), `PhysicsSystem_SaveState/RestoreState` and the
+per-body pair, plus per-object SaveState for constraints, both characters and soft body motion
+properties. The live tests replay a restored world to bit-identical positions. Still open, in
+planned order:
 
-1. Determinism: `StateRecorder`, `PhysicsSystem::SaveState/RestoreState` and the per-object
-   SaveState family.
-2. Constraints and vehicles: `PathConstraint` (its enum value exists and nothing else does),
+1. Constraints and vehicles: `PathConstraint` (its enum value exists and nothing else does),
    Pulley runtime accessors, vehicle step callbacks and the WheelWV slip fields.
-3. Character: the eight missing `CharacterContactListener` callbacks with the full
+2. Character: the eight missing `CharacterContactListener` callbacks with the full
    `CharacterContact` payload, custom character-vs-character procs, `mSupportingVolume`;
    `MotionProperties` completion; collectors with early-out.
-4. `DebugRenderer` through C procs.
+3. `DebugRenderer` through C procs.
 
 Deliberately out of scope unless asked for: hair simulation, the compute shader interface, and
 `ObjectStream` serialization.

@@ -56,6 +56,11 @@ add_executable(JoltC_Tests
     # constraint construction, Cosserat rods, skinning, runtime vertex writes and
     # CustomUpdate.
     test_phase2.c
+
+    # Phase 3: determinism and state: the in-memory StateRecorder, whole-system rollback
+    # replayed to bit-identical positions, byte-shipped snapshots, per-body state and the
+    # virtual character saving alongside the world.
+    test_phase3.c
 )
 
 # The target carries its own public include directory, so nothing here needs to know where
