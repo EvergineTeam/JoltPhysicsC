@@ -1222,12 +1222,7 @@ JOLTC_API void JoltC_SixDOFConstraintSettings_SetLimitedAxis(JoltC_SixDOFConstra
 /* ========================================================================== */
 /*  Constraint GetSettings                                                    */
 /* ========================================================================== */
-/* These used to be stubs returning NULL, under a comment claiming JPH constraints do not expose
- * their settings. That stopped being true: Constraint::GetConstraintSettings() is pure virtual on
- * the base and every constraint builds a fresh settings object from its live state. The stubs cost
- * more than nothing -- RagdollSettings_SetPartToParent takes a TwoBodyConstraintSettings*, and with
- * these returning NULL there was no way to produce one, so ragdolls could not be articulated from C
- * at all. The caller owns one reference and releases it with TwoBodyConstraintSettings_Release. */
+/* The caller owns one reference and releases it with TwoBodyConstraintSettings_Release. */
 static JoltC_TwoBodyConstraintSettings* getTwoBodySettings(const JoltC_Constraint* c)
 {
     if (!c) return nullptr;

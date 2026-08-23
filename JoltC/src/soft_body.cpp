@@ -450,7 +450,7 @@ JOLTC_API JoltC_BodyID JoltC_SoftBodyManifold_GetSensorContactBodyID(const JoltC
 }
 
 /* ========================================================================== */
-/*  Phase 2: full construction surface                                        */
+/*  SoftBodySharedSettings - full construction surface                        */
 /* ========================================================================== */
 JOLTC_API uint32_t JoltC_SoftBodySharedSettings_AddVertex2(JoltC_SoftBodySharedSettings* settings, float x, float y, float z, float vx, float vy, float vz, float invMass)
 {
@@ -672,7 +672,7 @@ JOLTC_API uint32_t JoltC_SoftBodySharedSettings_GetRodBendTwistConstraintCount(c
 }
 
 /* ========================================================================== */
-/*  Phase 2: creation settings, the rest of the struct                        */
+/*  SoftBodyCreationSettings - the rest of the struct                         */
 /* ========================================================================== */
 JOLTC_API void JoltC_SoftBodyCreationSettings_SetFacesDoubleSided(JoltC_SoftBodyCreationSettings* settings, JoltC_Bool facesDoubleSided)
 {
@@ -788,7 +788,7 @@ JOLTC_API JoltC_Bool JoltC_SoftBodyCreationSettings_GetFacesDoubleSided(const Jo
 }
 
 /* ========================================================================== */
-/*  Phase 2: per-vertex runtime access                                        */
+/*  SoftBodyMotionProperties - per-vertex runtime access                      */
 /* ========================================================================== */
 JOLTC_API void JoltC_SoftBodyMotionProperties_SetVertexPosition(JoltC_SoftBodyMotionProperties* motionProperties, uint32_t index, JoltC_Vec3 position)
 {
@@ -882,7 +882,7 @@ JOLTC_API JoltC_Bool JoltC_SoftBodyMotionProperties_GetFacesDoubleSided(const Jo
 }
 
 /* ========================================================================== */
-/*  Phase 2: skinning at runtime                                              */
+/*  SoftBodyMotionProperties - skinning at runtime                            */
 /* ========================================================================== */
 JOLTC_API void JoltC_SoftBodyMotionProperties_SkinVertices(
     JoltC_SoftBodyMotionProperties* motionProperties,
@@ -931,7 +931,7 @@ JOLTC_API void JoltC_SoftBodyMotionProperties_SetSkinnedMaxDistanceMultiplier(Jo
 }
 
 /* ========================================================================== */
-/*  Phase 2: stepping a soft body by hand                                     */
+/*  SoftBodyMotionProperties - stepping a body by hand                        */
 /* ========================================================================== */
 JOLTC_API void JoltC_SoftBodyMotionProperties_CustomUpdate(
     JoltC_SoftBodyMotionProperties* motionProperties,

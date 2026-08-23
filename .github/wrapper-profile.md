@@ -30,6 +30,10 @@ next free number is the answer here.
 (CesiumC does the opposite -- semantic suffixes like `_create_from_url`. Do not carry a habit
 across from one profile to the other.)
 
+One exception, kept on purpose: the six `JoltC_CharacterVirtual_*_WithFilters` entry points. They
+predate this rule being written down and are published in v5.6.2 onwards, so renaming them would
+break consumers for a cosmetic gain. New overloads take the numeric suffix.
+
 ## Paths
 
 | | |

@@ -158,7 +158,7 @@ JOLTC_API void JoltC_GroupFilterTable_EnableCollision(JoltC_GroupFilter* filter,
 JOLTC_API JoltC_Bool JoltC_GroupFilterTable_IsCollisionEnabled(const JoltC_GroupFilter* filter, JoltC_CollisionSubGroupID subGroup1, JoltC_CollisionSubGroupID subGroup2);
 
 /* -------------------------------------------------------------------------- */
-/*  System introspection (phase 5)                                            */
+/*  System introspection                                                      */
 /* -------------------------------------------------------------------------- */
 /* The bounding box of everything in the broad phase. */
 JOLTC_API void JoltC_PhysicsSystem_GetBounds(const JoltC_PhysicsSystem* system, JoltC_AABox* outBounds);

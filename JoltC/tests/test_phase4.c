@@ -59,7 +59,7 @@ void run_phase4_tests(void)
         TestPhysicsContext ctx;
         setup_physics_context(&ctx);
 
-        /* A straight path is the honest first path: the geometry is exactly predictable, so the
+        /* A straight path first: the geometry is exactly predictable, so the
          * assertions are about the constraint, not about spline aesthetics. */
         JoltC_PathConstraintPath* path = JoltC_PathConstraintPathHermite_Create();
         TEST_ASSERT_NOT_NULL(path, "hermite path created");
@@ -110,7 +110,7 @@ void run_phase4_tests(void)
         TEST_ASSERT(fabsf(arrived.y - 5.0f) < 0.25f, "gravity could not pull it off the curve");
         TEST_ASSERT(JoltC_PathConstraint_GetPathFraction(constraint) > 2.5f, "the fraction reports the journey");
 
-        /* Upstream honesty: Jolt 5.6 has not implemented PathConstraint::GetConstraintSettings
+        /* Jolt 5.6 has not implemented PathConstraint::GetConstraintSettings
          * (it is an explicit "not implemented yet" returning null), so null is the correct answer
          * here, not a wrapper defect. The CreateSettings direction works and is what ragdoll-style
          * construction needs. */

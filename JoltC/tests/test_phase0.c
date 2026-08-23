@@ -1,4 +1,4 @@
-/* JoltC Test Suite -- the phase 0 repairs: honest enums, real constraint settings, an articulated
+/* JoltC Test Suite -- the phase 0 repairs: enum values, real constraint settings, an articulated
  * ragdoll, filtered characters, soft body contact callbacks, and query settings that connect.
  * SPDX-License-Identifier: MIT
  *
@@ -55,7 +55,7 @@ void run_phase0_tests(void);
 void run_phase0_tests(void)
 {
     /* test_shape_type_labels_match_jolt */
-    TEST_BEGIN("Plane and empty shapes report themselves honestly");
+    TEST_BEGIN("Plane and empty shapes report their own type");
     {
         const JoltC_Shape* plane = JoltC_PlaneShape_Create((JoltC_Vec3){ 0.0f, 1.0f, 0.0f }, 0.0f, 100.0f);
         TEST_ASSERT_NOT_NULL(plane, "plane shape created");

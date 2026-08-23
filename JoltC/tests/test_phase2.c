@@ -199,7 +199,7 @@ void run_phase2_tests(void)
 
         /* Every rod constrained rigidly to its neighbour: the chain behaves as one stiff rod, so
          * the tip-to-pin distance below stays the full length even mid-swing. (Soft bend/twist
-         * would let the chain curve, and the straight-line distance would honestly drop.) */
+         * would let the chain curve, and the straight-line distance would drop.) */
         for (int i = 0; i < LINKS - 2; i++)
             JoltC_SoftBodySharedSettings_AddRodBendTwistConstraint(shared, rods[i], rods[i + 1], 0.0f);
 

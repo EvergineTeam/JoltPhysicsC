@@ -954,7 +954,7 @@ JOLTC_API JoltC_Wheel* JoltC_WheelTV_Create(const JoltC_WheelSettings* settings)
 }
 
 /* ========================================================================== */
-/*  Phase 4: constraint getters, step callbacks, collision cadence            */
+/*  VehicleConstraint - getters, step callbacks, cadence                      */
 /* ========================================================================== */
 JOLTC_API float JoltC_VehicleConstraint_GetMaxPitchRollAngle(const JoltC_VehicleConstraint* vc)
 {
@@ -1037,7 +1037,7 @@ JOLTC_API uint32_t JoltC_VehicleConstraint_GetNumStepsBetweenCollisionTestInacti
 }
 
 /* ========================================================================== */
-/*  Phase 4: what the tire is doing against the ground                        */
+/*  WheelWV / WheelTV - tire telemetry                                        */
 /* ========================================================================== */
 JOLTC_API float JoltC_WheelWV_GetLongitudinalSlip(const JoltC_WheelWV* w)
 {
@@ -1088,7 +1088,7 @@ JOLTC_API float JoltC_WheelTV_GetBrakeImpulse(const JoltC_WheelTV* w)
 }
 
 /* ========================================================================== */
-/*  Phase 4: the live differentials                                           */
+/*  WheeledVehicleController - the live differentials                         */
 /* ========================================================================== */
 JOLTC_API uint32_t JoltC_WheeledVehicleController_GetDifferentialsCount(const JoltC_WheeledVehicleController* c)
 {

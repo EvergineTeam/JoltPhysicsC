@@ -270,8 +270,7 @@ typedef enum JoltC_BodyType {
 } JoltC_BodyType;
 
 /* Values mirror JPH::EShapeType exactly, User1..4 included: JoltC_Shape_GetType is a static_cast,
- * so a missing value here does not fall away, it relabels its neighbours. This enum used to skip
- * the user slots and declared PLANE = 9 -- and a PlaneShape reported itself as EMPTY. */
+ * so a missing value here does not fall away, it relabels its neighbours. */
 typedef enum JoltC_ShapeType {
     JOLTC_SHAPE_TYPE_CONVEX      = 0,
     JOLTC_SHAPE_TYPE_COMPOUND    = 1,

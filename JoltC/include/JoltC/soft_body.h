@@ -30,11 +30,11 @@ JOLTC_API uint32_t JoltC_SoftBodySharedSettings_AddVertex2(JoltC_SoftBodySharedS
 /* Builds edge/shear/bend constraints from the faces added so far. Compliance FLT_MAX disables a constraint kind. */
 JOLTC_API void JoltC_SoftBodySharedSettings_CreateConstraints(JoltC_SoftBodySharedSettings* settings, float compliance, float shearCompliance, float bendCompliance, JoltC_SoftBodyBendType bendType);
 
-/* The full form: one attribute struct per vertex (when fewer are given the last one repeats, which
- * is Jolt's own convention), so cloth can be stiff at the hem and loose in the middle, and long
- * range attachments can finally be created -- an lraType other than NONE needs at least one pinned
- * vertex to anchor to. angleTolerance (radians) controls when two triangles count as a quad for
- * shear edges; Jolt's default is 8 degrees. */
+/* The full form: one attribute struct per vertex, so compliance and the long range attachment type
+ * can vary across the body. When fewer attributes than vertices are given the last one repeats,
+ * which is Jolt's own convention. An lraType other than NONE needs at least one pinned vertex to
+ * anchor to. angleTolerance (radians) controls when two triangles count as a quad for shear edges;
+ * Jolt's default is 8 degrees. */
 JOLTC_API void JoltC_SoftBodySharedSettings_CreateConstraints2(
     JoltC_SoftBodySharedSettings*         settings,
     const JoltC_SoftBodyVertexAttributes* vertexAttributes,

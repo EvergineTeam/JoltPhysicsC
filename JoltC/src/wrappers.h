@@ -49,7 +49,7 @@ using namespace JPH;
 /* -------------------------------------------------------------------------- */
 /*  TempAllocator wrapper                                                     */
 /* -------------------------------------------------------------------------- */
-/* Widened to the base since phase 5: the handle may hold the fixed-size TempAllocatorImpl or
+/* Widened to the base: the handle may hold the fixed-size TempAllocatorImpl or
  * TempAllocatorMalloc, and every consumer only needs TempAllocator&. */
 struct JoltC_TempAllocator {
     std::unique_ptr<TempAllocator> ptr;
@@ -58,7 +58,7 @@ struct JoltC_TempAllocator {
 /* -------------------------------------------------------------------------- */
 /*  JobSystem wrapper                                                         */
 /* -------------------------------------------------------------------------- */
-/* Widened to the base since phase 5: thread pool or single threaded, per creation call. */
+/* Widened to the base: thread pool or single threaded, per creation call. */
 struct JoltC_JobSystem {
     std::unique_ptr<JobSystem> ptr;
 };
@@ -288,7 +288,7 @@ public:
     }
 };
 
-/* The complete listener (phase 5): all eleven virtuals with the full CharacterContact payload,
+/* The complete listener: all eleven virtuals with the full CharacterContact payload,
  * including the character-versus-character family and the two solve hooks. */
 inline void fillCharacterContact(const CharacterContact& in, JoltC_CharacterContact& out)
 {

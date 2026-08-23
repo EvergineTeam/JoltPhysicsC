@@ -953,7 +953,7 @@ JOLTC_API void JoltC_SoftBodyCreationSettings_Destroy(JoltC_SoftBodyCreationSett
 }
 
 /* ========================================================================== */
-/*  Phase 5: system introspection, combine functions, allocators              */
+/*  System introspection, combine functions, allocators                       */
 /* ========================================================================== */
 JOLTC_API void JoltC_PhysicsSystem_GetBounds(const JoltC_PhysicsSystem* system, JoltC_AABox* outBounds)
 {

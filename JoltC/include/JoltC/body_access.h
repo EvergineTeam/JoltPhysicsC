@@ -174,7 +174,7 @@ JOLTC_API void               JoltC_MotionProperties_SetInverseInertia(JoltC_Moti
 JOLTC_API void               JoltC_MotionProperties_SetMassProperties(JoltC_MotionProperties* properties, JoltC_AllowedDOFs allowedDOFs, const JoltC_MassProperties* massProperties);
 JOLTC_API void               JoltC_MotionProperties_ScaleToMass(JoltC_MotionProperties* properties, float mass);
 
-/* The rest of the class (phase 5): everything below reads or writes the live motion state the
+/* The rest of the class: everything below reads or writes the live motion state the
  * solver uses, so the usual rule applies -- touch it between updates, not during one. */
 JOLTC_API JoltC_MotionQuality JoltC_MotionProperties_GetMotionQuality(const JoltC_MotionProperties* properties);
 JOLTC_API JoltC_Bool         JoltC_MotionProperties_GetAllowSleeping(const JoltC_MotionProperties* properties);

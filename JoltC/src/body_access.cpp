@@ -637,7 +637,7 @@ JOLTC_API void JoltC_MotionProperties_ScaleToMass(JoltC_MotionProperties* proper
 }
 
 /* ========================================================================== */
-/*  Phase 5: the rest of MotionProperties                                     */
+/*  MotionProperties - the rest of the class                                  */
 /* ========================================================================== */
 JOLTC_API JoltC_MotionQuality JoltC_MotionProperties_GetMotionQuality(const JoltC_MotionProperties* properties) {
     if (!properties) return (JoltC_MotionQuality)0;

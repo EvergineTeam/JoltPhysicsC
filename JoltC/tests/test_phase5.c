@@ -12,7 +12,9 @@
 #include <math.h>
 #include <string.h>
 
-/* --- Listener v2 telemetry ------------------------------------------------- */
+/* ========================================================================== */
+/*  Listener v2 telemetry                                                     */
+/* ========================================================================== */
 typedef struct ListenerTelemetry {
     int bodyContactsAdded;
     int characterContactsAdded;
@@ -49,14 +51,18 @@ static void on_contact_solve_v2(void* userData, JoltC_BodyID bodyID2, uint32_t o
     ((ListenerTelemetry*)userData)->contactSolves++;
 }
 
-/* --- Combine function ------------------------------------------------------ */
+/* ========================================================================== */
+/*  Combine function                                                          */
+/* ========================================================================== */
 static float combine_full_restitution(const JoltC_Body* body1, uint32_t subShapeID1, const JoltC_Body* body2, uint32_t subShapeID2)
 {
     (void)body1; (void)subShapeID1; (void)body2; (void)subShapeID2;
     return 1.0f;
 }
 
-/* --- Collectors ------------------------------------------------------------ */
+/* ========================================================================== */
+/*  Collectors                                                                */
+/* ========================================================================== */
 static int s_closeHits;
 static void count_collide_hit(void* userData, const JoltC_CollideShapeResult* result)
 {
@@ -77,7 +83,9 @@ static void count_broad_body(void* userData, JoltC_BodyID bodyID)
     (*(int*)userData)++;
 }
 
-/* --- Estimation from inside the contact callback --------------------------- */
+/* ========================================================================== */
+/*  Estimation from inside the contact callback                               */
+/* ========================================================================== */
 typedef struct EstimationCapture {
     int ran;
     uint32_t impulseCount;
