@@ -138,15 +138,25 @@ creation settings expose `mFacesDoubleSided`, `mCollisionGroup` and getters for 
 Phase 3 covered determinism and state: `StateRecorderImpl` in memory (with byte-level
 `CopyData`/`SetData` for shipping snapshots), `PhysicsSystem_SaveState/RestoreState` and the
 per-body pair, plus per-object SaveState for constraints, both characters and soft body motion
-properties. The live tests replay a restored world to bit-identical positions. Still open, in
+properties. The live tests replay a restored world to bit-identical positions.
+Phase 4 closed constraints and vehicles: `PathConstraint` end to end with Hermite paths, pulley
+rope control at runtime (`SetLength` hoists a live load), `Init`/`CreateSettings`/`GetSettings`
+for pulley and rack-and-pinion, tooth-count ratio arithmetic for gear and rack, body-space motor
+targets on hinge and swing-twist, the three vehicle step callbacks, collision-test cadence, the
+live differentials, and the tire telemetry fields (slip, combined frictions, brake impulse) on
+both wheel kinds. Decisions worth knowing: the ConstraintSettings base members (enabled,
+priority, step overrides) were NOT duplicated into the C settings structs because every one of
+them already has runtime setters on the constraint, reachable before the first step; a
+controller type query was not added because Jolt builds without RTTI and the creator of the
+controller settings already knows the type; and `PathConstraint_GetSettings` returns null
+because Jolt 5.6 itself has not implemented `PathConstraint::GetConstraintSettings` -- the
+declaration exists so upstream filling it in requires no API change here. Still open, in
 planned order:
 
-1. Constraints and vehicles: `PathConstraint` (its enum value exists and nothing else does),
-   Pulley runtime accessors, vehicle step callbacks and the WheelWV slip fields.
-2. Character: the eight missing `CharacterContactListener` callbacks with the full
+1. Character: the eight missing `CharacterContactListener` callbacks with the full
    `CharacterContact` payload, custom character-vs-character procs, `mSupportingVolume`;
    `MotionProperties` completion; collectors with early-out.
-3. `DebugRenderer` through C procs.
+2. `DebugRenderer` through C procs.
 
 Deliberately out of scope unless asked for: hair simulation, the compute shader interface, and
 `ObjectStream` serialization.

@@ -953,4 +953,171 @@ JOLTC_API JoltC_Wheel* JoltC_WheelTV_Create(const JoltC_WheelSettings* settings)
     return nullptr;
 }
 
+/* ========================================================================== */
+/*  Phase 4: constraint getters, step callbacks, collision cadence            */
+/* ========================================================================== */
+JOLTC_API float JoltC_VehicleConstraint_GetMaxPitchRollAngle(const JoltC_VehicleConstraint* vc)
+{
+    if (!vc) return 0.0f;
+    JOLTC_TRY_BEGIN
+    return asVC(vc)->GetMaxPitchRollAngle();
+    JOLTC_TRY_END
+    return 0.0f;
+}
+
+JOLTC_API const JoltC_VehicleCollisionTester* JoltC_VehicleConstraint_GetVehicleCollisionTester(const JoltC_VehicleConstraint* vc)
+{
+    if (!vc) return nullptr;
+    return fromVCT(const_cast<VehicleCollisionTester*>(asVC(vc)->GetVehicleCollisionTester()));
+}
+
+/* The std::function captures the C pair, so the capture IS the storage and a null fn clears by
+ * assigning an empty function. */
+JOLTC_API void JoltC_VehicleConstraint_SetPreStepCallback(JoltC_VehicleConstraint* vc, JoltC_OnVehicleStepFn callback, void* userData)
+{
+    if (!vc) return;
+    JOLTC_TRY_BEGIN
+    if (!callback) { asVC(vc)->SetPreStepCallback(VehicleConstraint::StepCallback()); return; }
+    asVC(vc)->SetPreStepCallback([callback, userData](VehicleConstraint& constraint, const PhysicsStepListenerContext& context)
+    {
+        callback(userData, reinterpret_cast<JoltC_VehicleConstraint*>(&constraint), context.mDeltaTime,
+                 context.mIsFirstStep ? JOLTC_TRUE : JOLTC_FALSE, context.mIsLastStep ? JOLTC_TRUE : JOLTC_FALSE);
+    });
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_VehicleConstraint_SetPostCollideCallback(JoltC_VehicleConstraint* vc, JoltC_OnVehicleStepFn callback, void* userData)
+{
+    if (!vc) return;
+    JOLTC_TRY_BEGIN
+    if (!callback) { asVC(vc)->SetPostCollideCallback(VehicleConstraint::StepCallback()); return; }
+    asVC(vc)->SetPostCollideCallback([callback, userData](VehicleConstraint& constraint, const PhysicsStepListenerContext& context)
+    {
+        callback(userData, reinterpret_cast<JoltC_VehicleConstraint*>(&constraint), context.mDeltaTime,
+                 context.mIsFirstStep ? JOLTC_TRUE : JOLTC_FALSE, context.mIsLastStep ? JOLTC_TRUE : JOLTC_FALSE);
+    });
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_VehicleConstraint_SetPostStepCallback(JoltC_VehicleConstraint* vc, JoltC_OnVehicleStepFn callback, void* userData)
+{
+    if (!vc) return;
+    JOLTC_TRY_BEGIN
+    if (!callback) { asVC(vc)->SetPostStepCallback(VehicleConstraint::StepCallback()); return; }
+    asVC(vc)->SetPostStepCallback([callback, userData](VehicleConstraint& constraint, const PhysicsStepListenerContext& context)
+    {
+        callback(userData, reinterpret_cast<JoltC_VehicleConstraint*>(&constraint), context.mDeltaTime,
+                 context.mIsFirstStep ? JOLTC_TRUE : JOLTC_FALSE, context.mIsLastStep ? JOLTC_TRUE : JOLTC_FALSE);
+    });
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_VehicleConstraint_SetNumStepsBetweenCollisionTestActive(JoltC_VehicleConstraint* vc, uint32_t steps)
+{
+    if (!vc) return;
+    asVC(vc)->SetNumStepsBetweenCollisionTestActive(steps);
+}
+
+JOLTC_API uint32_t JoltC_VehicleConstraint_GetNumStepsBetweenCollisionTestActive(const JoltC_VehicleConstraint* vc)
+{
+    if (!vc) return 0;
+    return asVC(vc)->GetNumStepsBetweenCollisionTestActive();
+}
+
+JOLTC_API void JoltC_VehicleConstraint_SetNumStepsBetweenCollisionTestInactive(JoltC_VehicleConstraint* vc, uint32_t steps)
+{
+    if (!vc) return;
+    asVC(vc)->SetNumStepsBetweenCollisionTestInactive(steps);
+}
+
+JOLTC_API uint32_t JoltC_VehicleConstraint_GetNumStepsBetweenCollisionTestInactive(const JoltC_VehicleConstraint* vc)
+{
+    if (!vc) return 0;
+    return asVC(vc)->GetNumStepsBetweenCollisionTestInactive();
+}
+
+/* ========================================================================== */
+/*  Phase 4: what the tire is doing against the ground                        */
+/* ========================================================================== */
+JOLTC_API float JoltC_WheelWV_GetLongitudinalSlip(const JoltC_WheelWV* w)
+{
+    if (!w) return 0.0f;
+    return asWheelWV(w)->mLongitudinalSlip;
+}
+
+JOLTC_API float JoltC_WheelWV_GetLateralSlip(const JoltC_WheelWV* w)
+{
+    if (!w) return 0.0f;
+    return asWheelWV(w)->mLateralSlip;
+}
+
+JOLTC_API float JoltC_WheelWV_GetCombinedLongitudinalFriction(const JoltC_WheelWV* w)
+{
+    if (!w) return 0.0f;
+    return asWheelWV(w)->mCombinedLongitudinalFriction;
+}
+
+JOLTC_API float JoltC_WheelWV_GetCombinedLateralFriction(const JoltC_WheelWV* w)
+{
+    if (!w) return 0.0f;
+    return asWheelWV(w)->mCombinedLateralFriction;
+}
+
+JOLTC_API float JoltC_WheelWV_GetBrakeImpulse(const JoltC_WheelWV* w)
+{
+    if (!w) return 0.0f;
+    return asWheelWV(w)->mBrakeImpulse;
+}
+
+JOLTC_API float JoltC_WheelTV_GetCombinedLongitudinalFriction(const JoltC_WheelTV* w)
+{
+    if (!w) return 0.0f;
+    return asWheelTV(w)->mCombinedLongitudinalFriction;
+}
+
+JOLTC_API float JoltC_WheelTV_GetCombinedLateralFriction(const JoltC_WheelTV* w)
+{
+    if (!w) return 0.0f;
+    return asWheelTV(w)->mCombinedLateralFriction;
+}
+
+JOLTC_API float JoltC_WheelTV_GetBrakeImpulse(const JoltC_WheelTV* w)
+{
+    if (!w) return 0.0f;
+    return asWheelTV(w)->mBrakeImpulse;
+}
+
+/* ========================================================================== */
+/*  Phase 4: the live differentials                                           */
+/* ========================================================================== */
+JOLTC_API uint32_t JoltC_WheeledVehicleController_GetDifferentialsCount(const JoltC_WheeledVehicleController* c)
+{
+    if (!c) return 0;
+    return (uint32_t)asWVC(c)->GetDifferentials().size();
+}
+
+JOLTC_API void JoltC_WheeledVehicleController_GetDifferential(const JoltC_WheeledVehicleController* c, uint32_t index, JoltC_VehicleDifferentialSettings* result)
+{
+    if (!c || !result || index >= asWVC(c)->GetDifferentials().size()) return;
+    fromJphDiffSettings(asWVC(c)->GetDifferentials()[index], result);
+}
+
+JOLTC_API void JoltC_WheeledVehicleController_SetDifferential(JoltC_WheeledVehicleController* c, uint32_t index, const JoltC_VehicleDifferentialSettings* value)
+{
+    if (!c || !value || index >= asWVC(c)->GetDifferentials().size()) return;
+    asWVC(c)->GetDifferentials()[index] = toJphDiffSettings(*value);
+}
+
+JOLTC_API float JoltC_WheeledVehicleController_GetDifferentialLimitedSlipRatio(const JoltC_WheeledVehicleController* c)
+{
+    if (!c) return 0.0f;
+    return asWVC(c)->GetDifferentialLimitedSlipRatio();
+}
+
+JOLTC_API void JoltC_WheeledVehicleController_SetDifferentialLimitedSlipRatio(JoltC_WheeledVehicleController* c, float value)
+{
+    if (!c) return;
+    asWVC(c)->SetDifferentialLimitedSlipRatio(value);
+}
+
 } /* extern "C" */

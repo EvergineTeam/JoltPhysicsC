@@ -61,6 +61,10 @@ add_executable(JoltC_Tests
     # replayed to bit-identical positions, byte-shipped snapshots, per-body state and the
     # virtual character saving alongside the world.
     test_phase3.c
+
+    # Phase 4: the PathConstraint end to end, pulley rope control, ratio arithmetic,
+    # body-space motor targets, vehicle step callbacks and tire telemetry.
+    test_phase4.c
 )
 
 # The target carries its own public include directory, so nothing here needs to know where

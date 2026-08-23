@@ -17,6 +17,9 @@
 #include <Jolt/Physics/Constraints/PulleyConstraint.h>
 #include <Jolt/Physics/Constraints/GearConstraint.h>
 #include <Jolt/Physics/Constraints/RackAndPinionConstraint.h>
+#include <Jolt/Physics/Constraints/PathConstraint.h>
+#include <Jolt/Physics/Constraints/PathConstraintPath.h>
+#include <Jolt/Physics/Constraints/PathConstraintPathHermite.h>
 
 #include "errors_internal.h"
 #include "internal.h"
@@ -375,6 +378,13 @@ JOLTC_API void JoltC_HingeConstraint_SetTargetAngle(JoltC_Constraint* c, float a
     JOLTC_TRY_END
 }
 
+JOLTC_API void JoltC_HingeConstraint_SetTargetOrientationBS(JoltC_Constraint* c, JoltC_Quat orientation) {
+    if (!c) return;
+    JOLTC_TRY_BEGIN
+    static_cast<HingeConstraint*>(asJph(c))->SetTargetOrientationBS(toJphQuat(orientation));
+    JOLTC_TRY_END
+}
+
 JOLTC_API float JoltC_HingeConstraint_GetTargetAngle(const JoltC_Constraint* c) {
     if (!c) return 0;
     JOLTC_TRY_BEGIN
@@ -689,6 +699,7 @@ JOLTC_API JoltC_MotorState JoltC_SwingTwistConstraint_GetTwistMotorState(const J
 JOLTC_API void JoltC_SwingTwistConstraint_SetTargetAngularVelocityCS(JoltC_Constraint* c, JoltC_Vec3 v) { if (!c) return; JOLTC_TRY_BEGIN ST_CAST(c)->SetTargetAngularVelocityCS(toJphVec3(v)); JOLTC_TRY_END }
 JOLTC_API JoltC_Vec3 JoltC_SwingTwistConstraint_GetTargetAngularVelocityCS(const JoltC_Constraint* c) { JoltC_Vec3 z = {0,0,0}; if (!c) return z; JOLTC_TRY_BEGIN return fromJphVec3(ST_CCAST(c)->GetTargetAngularVelocityCS()); JOLTC_TRY_END return z; }
 JOLTC_API void JoltC_SwingTwistConstraint_SetTargetOrientationCS(JoltC_Constraint* c, JoltC_Quat o) { if (!c) return; JOLTC_TRY_BEGIN ST_CAST(c)->SetTargetOrientationCS(toJphQuat(o)); JOLTC_TRY_END }
+JOLTC_API void JoltC_SwingTwistConstraint_SetTargetOrientationBS(JoltC_Constraint* c, JoltC_Quat o) { if (!c) return; JOLTC_TRY_BEGIN ST_CAST(c)->SetTargetOrientationBS(toJphQuat(o)); JOLTC_TRY_END }
 JOLTC_API JoltC_Quat JoltC_SwingTwistConstraint_GetTargetOrientationCS(const JoltC_Constraint* c) { JoltC_Quat z = {0,0,0,1}; if (!c) return z; JOLTC_TRY_BEGIN return fromJphQuat(ST_CCAST(c)->GetTargetOrientationCS()); JOLTC_TRY_END return z; }
 JOLTC_API void JoltC_SwingTwistConstraint_SetMaxFrictionTorque(JoltC_Constraint* c, float t) { if (!c) return; JOLTC_TRY_BEGIN ST_CAST(c)->SetMaxFrictionTorque(t); JOLTC_TRY_END }
 JOLTC_API float JoltC_SwingTwistConstraint_GetMaxFrictionTorque(const JoltC_Constraint* c) { if (!c) return 0; JOLTC_TRY_BEGIN return ST_CCAST(c)->GetMaxFrictionTorque(); JOLTC_TRY_END return 0; }
@@ -769,13 +780,8 @@ JOLTC_API float JoltC_SixDOFConstraint_GetMaxFriction(const JoltC_Constraint* c,
 /* -------------------------------------------------------------------------- */
 /*  PulleyConstraint                                                          */
 /* -------------------------------------------------------------------------- */
-JOLTC_API JoltC_Constraint* JoltC_PulleyConstraint_Create(
-    JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
-    const JoltC_PulleyConstraintSettings* s)
+static void fillPulley(PulleyConstraintSettings& settings, const JoltC_PulleyConstraintSettings* s)
 {
-    if (!system || !s) return nullptr;
-    JOLTC_TRY_BEGIN
-    PulleyConstraintSettings settings;
     settings.mSpace = toJphConstraintSpace(s->space);
     settings.mBodyPoint1 = toJphRVec3(s->bodyPoint1);
     settings.mFixedPoint1 = toJphRVec3(s->fixedPoint1);
@@ -784,9 +790,79 @@ JOLTC_API JoltC_Constraint* JoltC_PulleyConstraint_Create(
     settings.mRatio = s->ratio;
     settings.mMinLength = s->minLength;
     settings.mMaxLength = s->maxLength;
+}
+
+JOLTC_API JoltC_Constraint* JoltC_PulleyConstraint_Create(
+    JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
+    const JoltC_PulleyConstraintSettings* s)
+{
+    if (!system || !s) return nullptr;
+    JOLTC_TRY_BEGIN
+    PulleyConstraintSettings settings;
+    fillPulley(settings, s);
     return createTwoBody(system, b1, b2, settings);
     JOLTC_TRY_END
     return nullptr;
+}
+
+JOLTC_API void JoltC_PulleyConstraintSettings_Init(JoltC_PulleyConstraintSettings* s)
+{
+    if (!s) return;
+    PulleyConstraintSettings d;
+    s->space = static_cast<JoltC_ConstraintSpace>(d.mSpace);
+    s->bodyPoint1 = fromJphRVec3(d.mBodyPoint1);
+    s->fixedPoint1 = fromJphRVec3(d.mFixedPoint1);
+    s->bodyPoint2 = fromJphRVec3(d.mBodyPoint2);
+    s->fixedPoint2 = fromJphRVec3(d.mFixedPoint2);
+    s->ratio = d.mRatio;
+    s->minLength = d.mMinLength;
+    s->maxLength = d.mMaxLength;
+}
+
+JOLTC_API JoltC_TwoBodyConstraintSettings* JoltC_PulleyConstraintSettings_CreateSettings(const JoltC_PulleyConstraintSettings* s)
+{
+    if (!s) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* settings = new PulleyConstraintSettings();
+    fillPulley(*settings, s);
+    return wrapTwoBodySettings(settings);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API void JoltC_PulleyConstraint_SetLength(JoltC_Constraint* c, float minLength, float maxLength)
+{
+    if (!c) return;
+    JOLTC_TRY_BEGIN
+    static_cast<PulleyConstraint*>(asJph(c))->SetLength(minLength, maxLength);
+    JOLTC_TRY_END
+}
+
+JOLTC_API float JoltC_PulleyConstraint_GetMinLength(const JoltC_Constraint* c)
+{
+    if (!c) return 0.0f;
+    JOLTC_TRY_BEGIN
+    return static_cast<const PulleyConstraint*>(asJph(c))->GetMinLength();
+    JOLTC_TRY_END
+    return 0.0f;
+}
+
+JOLTC_API float JoltC_PulleyConstraint_GetMaxLength(const JoltC_Constraint* c)
+{
+    if (!c) return 0.0f;
+    JOLTC_TRY_BEGIN
+    return static_cast<const PulleyConstraint*>(asJph(c))->GetMaxLength();
+    JOLTC_TRY_END
+    return 0.0f;
+}
+
+JOLTC_API float JoltC_PulleyConstraint_GetCurrentLength(const JoltC_Constraint* c)
+{
+    if (!c) return 0.0f;
+    JOLTC_TRY_BEGIN
+    return static_cast<const PulleyConstraint*>(asJph(c))->GetCurrentLength();
+    JOLTC_TRY_END
+    return 0.0f;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -841,9 +917,26 @@ JOLTC_API float JoltC_GearConstraint_GetTotalLambda(const JoltC_Constraint* c) {
     return 0;
 }
 
+JOLTC_API void JoltC_GearConstraintSettings_SetRatio(JoltC_GearConstraintSettings* s, int numTeethGear1, int numTeethGear2)
+{
+    if (!s) return;
+    /* Jolt's own arithmetic, so the two never drift apart. */
+    GearConstraintSettings d;
+    d.SetRatio(numTeethGear1, numTeethGear2);
+    s->ratio = d.mRatio;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  RackAndPinionConstraint                                                   */
 /* -------------------------------------------------------------------------- */
+static void fillRackAndPinion(RackAndPinionConstraintSettings& settings, const JoltC_RackAndPinionConstraintSettings* s)
+{
+    settings.mSpace = toJphConstraintSpace(s->space);
+    settings.mHingeAxis = toJphVec3(s->hingeAxis);
+    settings.mSliderAxis = toJphVec3(s->sliderAxis);
+    settings.mRatio = s->ratio;
+}
+
 JOLTC_API JoltC_Constraint* JoltC_RackAndPinionConstraint_Create(
     JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
     const JoltC_RackAndPinionConstraintSettings* s)
@@ -851,13 +944,39 @@ JOLTC_API JoltC_Constraint* JoltC_RackAndPinionConstraint_Create(
     if (!system || !s) return nullptr;
     JOLTC_TRY_BEGIN
     RackAndPinionConstraintSettings settings;
-    settings.mSpace = toJphConstraintSpace(s->space);
-    settings.mHingeAxis = toJphVec3(s->hingeAxis);
-    settings.mSliderAxis = toJphVec3(s->sliderAxis);
-    settings.mRatio = s->ratio;
+    fillRackAndPinion(settings, s);
     return createTwoBody(system, b1, b2, settings);
     JOLTC_TRY_END
     return nullptr;
+}
+
+JOLTC_API void JoltC_RackAndPinionConstraintSettings_Init(JoltC_RackAndPinionConstraintSettings* s)
+{
+    if (!s) return;
+    RackAndPinionConstraintSettings d;
+    s->space = static_cast<JoltC_ConstraintSpace>(d.mSpace);
+    s->hingeAxis = fromJphVec3(d.mHingeAxis);
+    s->sliderAxis = fromJphVec3(d.mSliderAxis);
+    s->ratio = d.mRatio;
+}
+
+JOLTC_API JoltC_TwoBodyConstraintSettings* JoltC_RackAndPinionConstraintSettings_CreateSettings(const JoltC_RackAndPinionConstraintSettings* s)
+{
+    if (!s) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* settings = new RackAndPinionConstraintSettings();
+    fillRackAndPinion(*settings, s);
+    return wrapTwoBodySettings(settings);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API void JoltC_RackAndPinionConstraintSettings_SetRatio(JoltC_RackAndPinionConstraintSettings* s, int numTeethRack, float rackLength, int numTeethPinion)
+{
+    if (!s) return;
+    RackAndPinionConstraintSettings d;
+    d.SetRatio(numTeethRack, rackLength, numTeethPinion);
+    s->ratio = d.mRatio;
 }
 
 JOLTC_API void JoltC_RackAndPinionConstraint_SetConstraints(JoltC_Constraint* c, const JoltC_Constraint* pinion, const JoltC_Constraint* rack) {
@@ -1135,6 +1254,9 @@ SETTINGS_GETTER(ConeConstraint)
 SETTINGS_GETTER(SwingTwistConstraint)
 SETTINGS_GETTER(SixDOFConstraint)
 SETTINGS_GETTER(GearConstraint)
+SETTINGS_GETTER(PulleyConstraint)
+SETTINGS_GETTER(RackAndPinionConstraint)
+SETTINGS_GETTER(PathConstraint)
 #undef SETTINGS_GETTER
 
 JOLTC_API void JoltC_TwoBodyConstraintSettings_AddRef(JoltC_TwoBodyConstraintSettings* settings)
@@ -1425,5 +1547,240 @@ JOLTC_API JoltC_Vec3 JoltC_SixDOFConstraint_GetTotalLambdaMotorRotation(const Jo
     if (!c) return JoltC_Vec3{0,0,0};
     return fromJphVec3(static_cast<const SixDOFConstraint*>(asJph(c))->GetTotalLambdaMotorRotation());
 }
+
+/* ========================================================================== */
+/*  PathConstraintPath — ref-counted raw handle, like shapes                  */
+/* ========================================================================== */
+/* Two names rather than an overload: this section lives inside the extern "C" block, where
+ * overloading is not a thing. */
+static inline PathConstraintPath* asPathM(JoltC_PathConstraintPath* p) { return reinterpret_cast<PathConstraintPath*>(p); }
+static inline const PathConstraintPath* asPathC(const JoltC_PathConstraintPath* p) { return reinterpret_cast<const PathConstraintPath*>(p); }
+
+JOLTC_API JoltC_PathConstraintPath* JoltC_PathConstraintPathHermite_Create(void)
+{
+    JOLTC_TRY_BEGIN
+    auto* path = new PathConstraintPathHermite();
+    path->AddRef();
+    return reinterpret_cast<JoltC_PathConstraintPath*>(static_cast<PathConstraintPath*>(path));
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API void JoltC_PathConstraintPathHermite_AddPoint(JoltC_PathConstraintPath* path, JoltC_Vec3 position, JoltC_Vec3 tangent, JoltC_Vec3 normal)
+{
+    if (!path) return;
+    JOLTC_TRY_BEGIN
+    static_cast<PathConstraintPathHermite*>(asPathM(path))->AddPoint(toJphVec3(position), toJphVec3(tangent), toJphVec3(normal));
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_PathConstraintPath_SetIsLooping(JoltC_PathConstraintPath* path, JoltC_Bool looping)
+{
+    if (!path) return;
+    asPathM(path)->SetIsLooping(looping != 0);
+}
+
+JOLTC_API JoltC_Bool JoltC_PathConstraintPath_IsLooping(const JoltC_PathConstraintPath* path)
+{
+    if (!path) return JOLTC_FALSE;
+    return asPathC(path)->IsLooping() ? JOLTC_TRUE : JOLTC_FALSE;
+}
+
+JOLTC_API float JoltC_PathConstraintPath_GetPathMaxFraction(const JoltC_PathConstraintPath* path)
+{
+    if (!path) return 0.0f;
+    JOLTC_TRY_BEGIN
+    return asPathC(path)->GetPathMaxFraction();
+    JOLTC_TRY_END
+    return 0.0f;
+}
+
+JOLTC_API float JoltC_PathConstraintPath_GetClosestPoint(const JoltC_PathConstraintPath* path, JoltC_Vec3 position, float fractionHint)
+{
+    if (!path) return 0.0f;
+    JOLTC_TRY_BEGIN
+    return asPathC(path)->GetClosestPoint(toJphVec3(position), fractionHint);
+    JOLTC_TRY_END
+    return 0.0f;
+}
+
+JOLTC_API void JoltC_PathConstraintPath_GetPointOnPath(const JoltC_PathConstraintPath* path, float fraction, JoltC_Vec3* outPosition, JoltC_Vec3* outTangent, JoltC_Vec3* outNormal, JoltC_Vec3* outBinormal)
+{
+    if (!path) return;
+    JOLTC_TRY_BEGIN
+    Vec3 position, tangent, normal, binormal;
+    asPathC(path)->GetPointOnPath(fraction, position, tangent, normal, binormal);
+    if (outPosition) *outPosition = fromJphVec3(position);
+    if (outTangent) *outTangent = fromJphVec3(tangent);
+    if (outNormal) *outNormal = fromJphVec3(normal);
+    if (outBinormal) *outBinormal = fromJphVec3(binormal);
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_PathConstraintPath_AddRef(const JoltC_PathConstraintPath* path)
+{
+    if (!path) return;
+    asPathC(path)->AddRef();
+}
+
+JOLTC_API void JoltC_PathConstraintPath_Release(const JoltC_PathConstraintPath* path)
+{
+    if (!path) return;
+    asPathC(path)->Release();
+}
+
+/* ========================================================================== */
+/*  PathConstraint                                                            */
+/* ========================================================================== */
+static void fillPath(PathConstraintSettings& settings, const JoltC_PathConstraintSettings* s)
+{
+    settings.mPath = asPathC(s->path);
+    settings.mPathPosition = toJphVec3(s->pathPosition);
+    settings.mPathRotation = toJphQuat(s->pathRotation);
+    settings.mPathFraction = s->pathFraction;
+    settings.mMaxFrictionForce = s->maxFrictionForce;
+    settings.mPositionMotorSettings = toJphMotorSettings(s->positionMotorSettings);
+    settings.mRotationConstraintType = static_cast<EPathRotationConstraintType>(s->rotationConstraintType);
+}
+
+JOLTC_API void JoltC_PathConstraintSettings_Init(JoltC_PathConstraintSettings* s)
+{
+    if (!s) return;
+    PathConstraintSettings d;
+    s->path = nullptr;
+    s->pathPosition = fromJphVec3(d.mPathPosition);
+    s->pathRotation = fromJphQuat(d.mPathRotation);
+    s->pathFraction = d.mPathFraction;
+    s->maxFrictionForce = d.mMaxFrictionForce;
+    s->positionMotorSettings.springSettings = fromJphSpringSettings(d.mPositionMotorSettings.mSpringSettings);
+    s->positionMotorSettings.minForceLimit = d.mPositionMotorSettings.mMinForceLimit;
+    s->positionMotorSettings.maxForceLimit = d.mPositionMotorSettings.mMaxForceLimit;
+    s->positionMotorSettings.minTorqueLimit = d.mPositionMotorSettings.mMinTorqueLimit;
+    s->positionMotorSettings.maxTorqueLimit = d.mPositionMotorSettings.mMaxTorqueLimit;
+    s->rotationConstraintType = static_cast<JoltC_PathRotationConstraintType>(d.mRotationConstraintType);
+}
+
+JOLTC_API JoltC_Constraint* JoltC_PathConstraint_Create(
+    JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
+    const JoltC_PathConstraintSettings* s)
+{
+    if (!system || !s || !s->path) return nullptr;
+    JOLTC_TRY_BEGIN
+    PathConstraintSettings settings;
+    fillPath(settings, s);
+    return createTwoBody(system, b1, b2, settings);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API JoltC_TwoBodyConstraintSettings* JoltC_PathConstraintSettings_CreateSettings(const JoltC_PathConstraintSettings* s)
+{
+    if (!s) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* settings = new PathConstraintSettings();
+    fillPath(*settings, s);
+    return wrapTwoBodySettings(settings);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+#define PC_CAST(c)  static_cast<PathConstraint*>(asJph(c))
+#define PC_CCAST(c) static_cast<const PathConstraint*>(asJph(c))
+
+JOLTC_API void JoltC_PathConstraint_SetPath(JoltC_Constraint* c, const JoltC_PathConstraintPath* path, float pathFraction)
+{
+    if (!c) return;
+    JOLTC_TRY_BEGIN
+    PC_CAST(c)->SetPath(asPathC(path), pathFraction);
+    JOLTC_TRY_END
+}
+
+JOLTC_API float JoltC_PathConstraint_GetPathFraction(const JoltC_Constraint* c)
+{
+    if (!c) return 0.0f;
+    JOLTC_TRY_BEGIN
+    return PC_CCAST(c)->GetPathFraction();
+    JOLTC_TRY_END
+    return 0.0f;
+}
+
+JOLTC_API void JoltC_PathConstraint_SetMaxFrictionForce(JoltC_Constraint* c, float force)
+{
+    if (!c) return;
+    JOLTC_TRY_BEGIN
+    PC_CAST(c)->SetMaxFrictionForce(force);
+    JOLTC_TRY_END
+}
+
+JOLTC_API float JoltC_PathConstraint_GetMaxFrictionForce(const JoltC_Constraint* c)
+{
+    if (!c) return 0.0f;
+    JOLTC_TRY_BEGIN
+    return PC_CCAST(c)->GetMaxFrictionForce();
+    JOLTC_TRY_END
+    return 0.0f;
+}
+
+JOLTC_API void JoltC_PathConstraint_SetPositionMotorState(JoltC_Constraint* c, JoltC_MotorState state)
+{
+    if (!c) return;
+    JOLTC_TRY_BEGIN
+    PC_CAST(c)->SetPositionMotorState(toJphMotorState(state));
+    JOLTC_TRY_END
+}
+
+JOLTC_API JoltC_MotorState JoltC_PathConstraint_GetPositionMotorState(const JoltC_Constraint* c)
+{
+    if (!c) return JOLTC_MOTOR_STATE_OFF;
+    JOLTC_TRY_BEGIN
+    return fromJphMotorState(PC_CCAST(c)->GetPositionMotorState());
+    JOLTC_TRY_END
+    return JOLTC_MOTOR_STATE_OFF;
+}
+
+JOLTC_API void JoltC_PathConstraint_SetTargetVelocity(JoltC_Constraint* c, float velocity)
+{
+    if (!c) return;
+    JOLTC_TRY_BEGIN
+    PC_CAST(c)->SetTargetVelocity(velocity);
+    JOLTC_TRY_END
+}
+
+JOLTC_API float JoltC_PathConstraint_GetTargetVelocity(const JoltC_Constraint* c)
+{
+    if (!c) return 0.0f;
+    JOLTC_TRY_BEGIN
+    return PC_CCAST(c)->GetTargetVelocity();
+    JOLTC_TRY_END
+    return 0.0f;
+}
+
+JOLTC_API void JoltC_PathConstraint_SetTargetPathFraction(JoltC_Constraint* c, float fraction)
+{
+    if (!c) return;
+    JOLTC_TRY_BEGIN
+    PC_CAST(c)->SetTargetPathFraction(fraction);
+    JOLTC_TRY_END
+}
+
+JOLTC_API float JoltC_PathConstraint_GetTargetPathFraction(const JoltC_Constraint* c)
+{
+    if (!c) return 0.0f;
+    JOLTC_TRY_BEGIN
+    return PC_CCAST(c)->GetTargetPathFraction();
+    JOLTC_TRY_END
+    return 0.0f;
+}
+
+JOLTC_API void JoltC_PathConstraint_SetPositionMotorSettings(JoltC_Constraint* c, const JoltC_MotorSettings* settings)
+{
+    if (!c || !settings) return;
+    JOLTC_TRY_BEGIN
+    PC_CAST(c)->GetPositionMotorSettings() = toJphMotorSettings(*settings);
+    JOLTC_TRY_END
+}
+
+#undef PC_CAST
+#undef PC_CCAST
 
 } /* extern "C" */

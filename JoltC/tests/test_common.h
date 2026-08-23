@@ -132,4 +132,9 @@ void run_phase2_tests(void);
  * alongside the world because the system snapshot cannot see it. */
 void run_phase3_tests(void);
 
+/* Phase 4: constraints and vehicles to one hundred percent: PathConstraint with its Hermite
+ * paths, pulley rope control at runtime, gear/rack ratio arithmetic, body-space motor targets,
+ * the three vehicle step callbacks and the tire telemetry fields. */
+void run_phase4_tests(void);
+
 #endif /* TEST_COMMON_H */

@@ -63,6 +63,10 @@ void run_phase3_tests(void)
         JoltC_Constraint* constraint = JoltC_HingeConstraint_Create(ctx.physicsSystem, a, b, &hinge);
         TEST_ASSERT_NOT_NULL(constraint, "hinge created");
 
+        /* Registered, so the rollback below really covers a solving constraint: an unregistered
+         * hinge would make this pair a determinism test of two free boxes and nothing more. */
+        JoltC_PhysicsSystem_AddConstraint(ctx.physicsSystem, constraint);
+
         step_n(&ctx, 30);
 
         JoltC_StateRecorder* recorder = JoltC_StateRecorderImpl_Create();
@@ -98,6 +102,7 @@ void run_phase3_tests(void)
         TEST_ASSERT(identical, "every body, hinged pair included, landed on bit-identical positions");
 
         JoltC_StateRecorderImpl_Destroy(recorder);
+        JoltC_PhysicsSystem_RemoveConstraint(ctx.physicsSystem, constraint);
         JoltC_Constraint_Destroy(constraint);
         teardown_physics_context(&ctx);
     }
