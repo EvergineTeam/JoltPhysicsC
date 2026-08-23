@@ -150,13 +150,21 @@ them already has runtime setters on the constraint, reachable before the first s
 controller type query was not added because Jolt builds without RTTI and the creator of the
 controller settings already knows the type; and `PathConstraint_GetSettings` returns null
 because Jolt 5.6 itself has not implemented `PathConstraint::GetConstraintSettings` -- the
-declaration exists so upstream filling it in requires no API change here. Still open, in
-planned order:
+declaration exists so upstream filling it in requires no API change here.
+Phase 5 closed character and system: `CharacterContactListener_Create2` carries all eleven
+callbacks with the full `JoltC_CharacterContact` payload (including the four
+character-versus-character events, the two solve hooks and `OnAdjustBodyVelocity`),
+`mSupportingVolume` travels through settings and runtime, `MotionProperties` is complete
+(motion quality, velocities with clamps and caps, gravity factor, step overrides, accumulated
+force/torque, point velocity, local inverse inertia), queries gained
+`CollideShapeWithInternalEdgeRemoval` and the closest-hit `CastShapeClosest` (Jolt's own
+early-out collector), the broad phase gained `CastAABox` and `CollideOrientedBox`, the system
+reports `GetBounds`/`GetActiveBodies`/`GetBodyStats`, the combine functions are settable from C
+(process-wide by construction: Jolt stores a bare function pointer), `TempAllocatorMalloc` and
+`JobSystemSingleThreaded` exist, and `JoltC_EstimateCollisionResponse` finally gives
+`CollisionEstimationResult` its producer. Still open:
 
-1. Character: the eight missing `CharacterContactListener` callbacks with the full
-   `CharacterContact` payload, custom character-vs-character procs, `mSupportingVolume`;
-   `MotionProperties` completion; collectors with early-out.
-2. `DebugRenderer` through C procs.
+1. `DebugRenderer` through C procs.
 
 Deliberately out of scope unless asked for: hair simulation, the compute shader interface, and
 `ObjectStream` serialization.
