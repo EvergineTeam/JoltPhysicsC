@@ -176,5 +176,15 @@ triangle callback degrades to wireframe through the line one. `DrawBodies` takes
 about 0.1 MB (~15%) for it, paid on purpose: a distribution build without it would export
 functions that silently draw nothing.
 
+Two additions came out of using it. `JoltC_DebugRenderer_SetCameraPos` exists because
+`DebugRendererSimple` only consults the level of detail of a geometry when it knows where the
+camera is, and a renderer that never hears about one draws every shape at the finest level Jolt
+holds: a sphere is 2048 triangles there and 32 at the coarsest, and the thresholds are five, ten
+and forty metres. `JoltC_DebugRenderer_CreateCollector` with `JoltC_DebugRenderer_TakeVertices`
+exists because the callbacks are per line, and Jolt draws a wireframe as three lines per triangle:
+a five hundred body scene spent most of its frame crossing the language boundary. The collector
+appends to a buffer the caller drains once a frame instead. Both are additive; the callback
+renderer is published from v5.6.8 and stays.
+
 The phased coverage plan is complete. Deliberately out of scope unless asked for: hair
 simulation, the compute shader interface, and `ObjectStream` serialization.

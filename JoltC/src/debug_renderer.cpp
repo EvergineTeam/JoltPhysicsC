@@ -16,9 +16,10 @@
 
 using namespace JPH;
 
-/* Everything Jolt draws arrives here and leaves as a C callback. DebugRendererSimple already
- * reduces solid geometry to DrawTriangle calls; a missing triangle callback degrades further to
- * the three edges as lines, so a line-only renderer still sees every shape. */
+/* Everything Jolt draws arrives here and leaves as a C callback, or is appended to a buffer the
+ * caller drains once per frame. DebugRendererSimple already reduces solid geometry to DrawTriangle
+ * calls; a missing triangle callback degrades further to the three edges as lines, so a line-only
+ * renderer still sees every shape. */
 class DebugRendererCallback final : public DebugRendererSimple
 {
 public:
@@ -26,9 +27,19 @@ public:
     JoltC_DebugDrawTriangleFn fnTriangle = nullptr;
     JoltC_DebugDrawText3DFn fnText = nullptr;
     void* userData = nullptr;
+    bool collecting = false;
+    Array<JoltC_DebugVertex> vertices;
 
     void DrawLine(RVec3Arg inFrom, RVec3Arg inTo, ColorArg inColor) override
     {
+        if (collecting)
+        {
+            uint32 color = inColor.GetUInt32();
+            vertices.push_back(ToVertex(inFrom, color));
+            vertices.push_back(ToVertex(inTo, color));
+            return;
+        }
+
         if (!fnLine) return;
         fnLine(userData, ToC(inFrom), ToC(inTo), inColor.GetUInt32());
     }
@@ -56,6 +67,16 @@ public:
     }
 
 private:
+    static JoltC_DebugVertex ToVertex(RVec3Arg v, uint32 color)
+    {
+        JoltC_DebugVertex r;
+        r.x = (float)v.GetX();
+        r.y = (float)v.GetY();
+        r.z = (float)v.GetZ();
+        r.color = color;
+        return r;
+    }
+
     static JoltC_RVec3 ToC(RVec3Arg v)
     {
         JoltC_RVec3 r;
@@ -91,6 +112,39 @@ JOLTC_API JoltC_DebugRenderer* JoltC_DebugRenderer_Create(
 JOLTC_API void JoltC_DebugRenderer_Destroy(JoltC_DebugRenderer* renderer)
 {
     delete asRenderer(renderer);
+}
+
+JOLTC_API JoltC_DebugRenderer* JoltC_DebugRenderer_CreateCollector(void)
+{
+    JOLTC_TRY_BEGIN
+    auto* renderer = new DebugRendererCallback();
+    renderer->collecting = true;
+    return reinterpret_cast<JoltC_DebugRenderer*>(renderer);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API uint32_t JoltC_DebugRenderer_TakeVertices(JoltC_DebugRenderer* renderer, const JoltC_DebugVertex** outVertices)
+{
+    if (!renderer) return 0;
+    auto* self = asRenderer(renderer);
+
+    if (outVertices)
+        *outVertices = self->vertices.data();
+
+    uint32_t count = (uint32_t)self->vertices.size();
+
+    /* The capacity is kept: a frame draws about as much as the one before it, and the block the
+     * caller was just handed stays readable until the next line is appended over it. */
+    self->vertices.resize(0);
+
+    return count;
+}
+
+JOLTC_API void JoltC_DebugRenderer_SetCameraPos(JoltC_DebugRenderer* renderer, JoltC_RVec3 position)
+{
+    if (!renderer) return;
+    asRenderer(renderer)->SetCameraPos(toJphRVec3(position));
 }
 
 JOLTC_API void JoltC_BodyDrawSettings_Init(JoltC_BodyDrawSettings* settings)

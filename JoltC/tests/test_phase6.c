@@ -168,4 +168,82 @@ void run_phase6_tests(void)
         teardown_physics_context(&ctx);
     }
     TEST_END();
+
+    /* test_collector_hands_over_a_block */
+    TEST_BEGIN("The collecting renderer hands over its lines as one block");
+    {
+        TestPhysicsContext ctx;
+        setup_physics_context(&ctx);
+
+        JoltC_RVec3 spawn = { 0.0f, 2.0f, 0.0f };
+        create_test_box_body(&ctx, spawn, JOLTC_MOTION_TYPE_DYNAMIC, JOLTC_ACTIVATION_ACTIVATE);
+
+        JoltC_DebugRenderer* collector = JoltC_DebugRenderer_CreateCollector();
+        TEST_ASSERT_NOT_NULL(collector, "collector created");
+
+        JoltC_PhysicsSystem_DrawBodies(ctx.physicsSystem, NULL, collector);
+
+        const JoltC_DebugVertex* vertices = NULL;
+        uint32_t count = JoltC_DebugRenderer_TakeVertices(collector, &vertices);
+        TEST_ASSERT(count > 0, "the box was collected instead of called back");
+        TEST_ASSERT(count % 2 == 0, "two vertices per line, so an even count");
+        TEST_ASSERT_NOT_NULL(vertices, "and a block to read them from");
+
+        const JoltC_DebugVertex* second = NULL;
+        TEST_ASSERT(JoltC_DebugRenderer_TakeVertices(collector, &second) == 0,
+                    "taking it a second time hands over nothing: the buffer was emptied");
+
+        JoltC_PhysicsSystem_DrawBodies(ctx.physicsSystem, NULL, collector);
+        TEST_ASSERT(JoltC_DebugRenderer_TakeVertices(collector, &second) == count,
+                    "and the next frame collects the same box again");
+
+        JoltC_DebugRenderer_Destroy(collector);
+        teardown_physics_context(&ctx);
+    }
+    TEST_END();
+
+    /* test_camera_position_picks_the_level_of_detail */
+    TEST_BEGIN("The camera position picks how finely a shape is drawn");
+    {
+        TestPhysicsContext ctx;
+        setup_physics_context(&ctx);
+
+        /* A sphere, because a box carries one level of detail and a sphere carries four. */
+        const JoltC_Shape* sphere = JoltC_SphereShape_Create(0.5f);
+        JoltC_RVec3 away = { 0.0f, 0.0f, 100.0f };
+        JoltC_Quat identity = { 0.0f, 0.0f, 0.0f, 1.0f };
+        JoltC_BodyCreationSettings* settings = JoltC_BodyCreationSettings_Create3(
+            sphere, away, identity, JOLTC_MOTION_TYPE_STATIC, OBJ_LAYER_STATIC);
+        JoltC_BodyID id = JoltC_BodyInterface_CreateAndAddBody(ctx.bodyInterface, settings, JOLTC_ACTIVATION_DONT_ACTIVATE);
+        JoltC_BodyCreationSettings_Destroy(settings);
+        JoltC_Shape_Release(sphere);
+        TEST_ASSERT(id != JOLTC_BODY_ID_INVALID, "distant sphere added");
+
+        const JoltC_DebugVertex* vertices = NULL;
+        JoltC_DebugRenderer* collector = JoltC_DebugRenderer_CreateCollector();
+
+        /* Nobody has said where the camera is, so Jolt draws the finest level it holds. */
+        JoltC_PhysicsSystem_DrawBodies(ctx.physicsSystem, NULL, collector);
+        uint32_t blind = JoltC_DebugRenderer_TakeVertices(collector, &vertices);
+        TEST_ASSERT(blind > 0, "the sphere drew");
+
+        /* A hundred metres away, which is past every level of detail Jolt carries. */
+        JoltC_RVec3 origin = { 0.0f, 0.0f, 0.0f };
+        JoltC_DebugRenderer_SetCameraPos(collector, origin);
+        JoltC_PhysicsSystem_DrawBodies(ctx.physicsSystem, NULL, collector);
+        uint32_t distant = JoltC_DebugRenderer_TakeVertices(collector, &vertices);
+        TEST_ASSERT(distant * 4 < blind, "a hundred metres away it drew a fraction of the vertices");
+
+        /* Standing next to it, the finest level comes back. */
+        JoltC_RVec3 next_to_it = { 0.0f, 0.0f, 99.0f };
+        JoltC_DebugRenderer_SetCameraPos(collector, next_to_it);
+        JoltC_PhysicsSystem_DrawBodies(ctx.physicsSystem, NULL, collector);
+        uint32_t close = JoltC_DebugRenderer_TakeVertices(collector, &vertices);
+        TEST_ASSERT(close == blind, "up close it is drawn as finely as when no camera was known");
+
+        JoltC_DebugRenderer_Destroy(collector);
+        JoltC_BodyInterface_RemoveBody(ctx.bodyInterface, id);
+        teardown_physics_context(&ctx);
+    }
+    TEST_END();
 }
