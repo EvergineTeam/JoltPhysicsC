@@ -143,4 +143,7 @@ void run_phase4_tests(void);
  * allocators and collision response estimation. */
 void run_phase5_tests(void);
 
+/* Phase 6: the debug renderer: Jolt's own drawing through three C callbacks. */
+void run_phase6_tests(void);
+
 #endif /* TEST_COMMON_H */

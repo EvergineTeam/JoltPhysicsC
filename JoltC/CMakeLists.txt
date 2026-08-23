@@ -36,6 +36,11 @@ set(JPH_USE_CPU_COMPUTE OFF CACHE BOOL "" FORCE)
 # built before the variable existed.
 set(JPH_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
+# The debug renderer ships in every configuration since phase 6: the C API exposes it, and a
+# distribution build without it would export functions that silently draw nothing. This is a
+# binary size trade made on purpose -- the Draw implementations of every shape come along.
+set(DEBUG_RENDERER_IN_DISTRIBUTION ON CACHE BOOL "" FORCE)
+
 include(${PHYSICS_REPO_ROOT}/Jolt/Jolt.cmake)
 
 # Ensure Jolt static lib is built with PIC (required for linking into shared lib on Linux)
@@ -60,6 +65,7 @@ set(JOLTC_SRC
     src/skeleton.cpp
     src/soft_body.cpp
     src/state_recorder.cpp
+    src/debug_renderer.cpp
 )
 
 if (JOLTC_STATIC)

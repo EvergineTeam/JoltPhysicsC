@@ -70,6 +70,11 @@ add_executable(JoltC_Tests
     # MotionProperties, closest-hit casts, internal edge removal, broad phase boxes,
     # the system census, combine functions, alternative allocators and response estimation.
     test_phase5.c
+
+    # Phase 6: the debug renderer reduced to three C callbacks: bodies as triangles (or
+    # lines when no triangle callback exists), constraints with their limit arcs, and
+    # soft body structure.
+    test_phase6.c
 )
 
 # The target carries its own public include directory, so nothing here needs to know where

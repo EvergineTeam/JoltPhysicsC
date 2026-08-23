@@ -162,9 +162,15 @@ early-out collector), the broad phase gained `CastAABox` and `CollideOrientedBox
 reports `GetBounds`/`GetActiveBodies`/`GetBodyStats`, the combine functions are settable from C
 (process-wide by construction: Jolt stores a bare function pointer), `TempAllocatorMalloc` and
 `JobSystemSingleThreaded` exist, and `JoltC_EstimateCollisionResponse` finally gives
-`CollisionEstimationResult` its producer. Still open:
+`CollisionEstimationResult` its producer.
+Phase 6 closed the plan: the debug renderer runs through three C callbacks (line, triangle,
+text). `DebugRendererSimple` reduces everything Jolt draws to those primitives; a missing
+triangle callback degrades to wireframe through the line one. `DrawBodies` takes the full
+`BodyManager::DrawSettings` mirror (soft body structure included), and `DrawConstraints` /
+`DrawConstraintLimits` draw what no engine-side reimplementation can see. This required pinning
+`DEBUG_RENDERER_IN_DISTRIBUTION ON` in `JoltC/CMakeLists.txt` — the win-x64 release zip grows
+about 0.1 MB (~15%) for it, paid on purpose: a distribution build without it would export
+functions that silently draw nothing.
 
-1. `DebugRenderer` through C procs.
-
-Deliberately out of scope unless asked for: hair simulation, the compute shader interface, and
-`ObjectStream` serialization.
+The phased coverage plan is complete. Deliberately out of scope unless asked for: hair
+simulation, the compute shader interface, and `ObjectStream` serialization.

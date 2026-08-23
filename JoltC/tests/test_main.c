@@ -186,6 +186,9 @@ int main(int argc, char* argv[])
     printf("\n[SUITE] Phase5\n");
     run_phase5_tests();
 
+    printf("\n[SUITE] Phase6\n");
+    run_phase6_tests();
+
     JoltC_Shutdown();
 
     printf("\n=== Results: %d/%d passed, %d failed ===\n",
