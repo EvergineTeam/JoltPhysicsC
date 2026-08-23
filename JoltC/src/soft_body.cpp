@@ -6,6 +6,9 @@
 #include <Jolt/Physics/SoftBody/SoftBodySharedSettings.h>
 #include <Jolt/Physics/SoftBody/SoftBodyCreationSettings.h>
 #include <Jolt/Physics/SoftBody/SoftBodyMotionProperties.h>
+#include <Jolt/Physics/SoftBody/SoftBodyContactListener.h>
+#include <Jolt/Physics/SoftBody/SoftBodyManifold.h>
+#include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Body/Body.h>
 
 #include <JoltC/soft_body.h>
@@ -31,6 +34,52 @@ static inline JoltC_SoftBodyCreationSettings_Impl* asSBCS(const JoltC_SoftBodyCr
 
 static inline SoftBodyMotionProperties* asSBMP(JoltC_SoftBodyMotionProperties* h) { return reinterpret_cast<SoftBodyMotionProperties*>(h); }
 static inline const SoftBodyMotionProperties* asSBMP(const JoltC_SoftBodyMotionProperties* h) { return reinterpret_cast<const SoftBodyMotionProperties*>(h); }
+
+static inline const SoftBodyManifold* asManifold(const JoltC_SoftBodyManifold* h) { return reinterpret_cast<const SoftBodyManifold*>(h); }
+
+/* The listener that forwards into C. Callbacks run while every body is locked, so the C side must
+ * not call back into the body interface -- the same contract Jolt states for the C++ listener. */
+struct JoltC_SoftBodyContactListener_Impl final : public SoftBodyContactListener
+{
+    JoltC_OnSoftBodyContactValidateFn onValidate = nullptr;
+    JoltC_OnSoftBodyContactAddedFn onAdded = nullptr;
+    void* userData = nullptr;
+
+    SoftBodyValidateResult OnSoftBodyContactValidate(const Body& softBody, const Body& otherBody, SoftBodyContactSettings& ioSettings) override
+    {
+        if (!onValidate)
+            return SoftBodyValidateResult::AcceptContact;
+
+        JoltC_SoftBodyContactSettings settings;
+        settings.invMassScale1 = ioSettings.mInvMassScale1;
+        settings.invMassScale2 = ioSettings.mInvMassScale2;
+        settings.invInertiaScale2 = ioSettings.mInvInertiaScale2;
+        settings.isSensor = ioSettings.mIsSensor ? 1 : 0;
+
+        JoltC_SoftBodyValidateResult result = onValidate(
+            userData,
+            reinterpret_cast<const JoltC_Body*>(&softBody),
+            reinterpret_cast<const JoltC_Body*>(&otherBody),
+            &settings);
+
+        ioSettings.mInvMassScale1 = settings.invMassScale1;
+        ioSettings.mInvMassScale2 = settings.invMassScale2;
+        ioSettings.mInvInertiaScale2 = settings.invInertiaScale2;
+        ioSettings.mIsSensor = settings.isSensor != 0;
+
+        return result == JOLTC_SOFT_BODY_VALIDATE_RESULT_REJECT_CONTACT
+            ? SoftBodyValidateResult::RejectContact
+            : SoftBodyValidateResult::AcceptContact;
+    }
+
+    void OnSoftBodyContactAdded(const Body& softBody, const SoftBodyManifold& manifold) override
+    {
+        if (onAdded)
+            onAdded(userData,
+                reinterpret_cast<const JoltC_Body*>(&softBody),
+                reinterpret_cast<const JoltC_SoftBodyManifold*>(&manifold));
+    }
+};
 
 extern "C" {
 
@@ -315,6 +364,89 @@ JOLTC_API void JoltC_SoftBodyMotionProperties_SetPressure(JoltC_SoftBodyMotionPr
 {
     if (!motionProperties) return;
     asSBMP(motionProperties)->SetPressure(pressure);
+}
+
+/* ========================================================================== */
+/*  SoftBodyContactListener                                                   */
+/* ========================================================================== */
+JOLTC_API JoltC_SoftBodyContactListener* JoltC_SoftBodyContactListener_Create(
+    JoltC_OnSoftBodyContactValidateFn onValidate,
+    JoltC_OnSoftBodyContactAddedFn onAdded,
+    void* userData)
+{
+    JOLTC_TRY_BEGIN
+    auto* listener = new JoltC_SoftBodyContactListener_Impl();
+    listener->onValidate = onValidate;
+    listener->onAdded = onAdded;
+    listener->userData = userData;
+    return reinterpret_cast<JoltC_SoftBodyContactListener*>(listener);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API void JoltC_SoftBodyContactListener_Destroy(JoltC_SoftBodyContactListener* listener)
+{
+    delete reinterpret_cast<JoltC_SoftBodyContactListener_Impl*>(listener);
+}
+
+JOLTC_API void JoltC_PhysicsSystem_SetSoftBodyContactListener(JoltC_PhysicsSystem* system, JoltC_SoftBodyContactListener* listener)
+{
+    if (!system) return;
+    system->ptr->SetSoftBodyContactListener(reinterpret_cast<JoltC_SoftBodyContactListener_Impl*>(listener));
+}
+
+/* ========================================================================== */
+/*  SoftBodyManifold                                                          */
+/* ========================================================================== */
+JOLTC_API uint32_t JoltC_SoftBodyManifold_GetVertexCount(const JoltC_SoftBodyManifold* manifold)
+{
+    if (!manifold) return 0;
+    return (uint32_t)asManifold(manifold)->GetVertices().size();
+}
+
+JOLTC_API JoltC_Bool JoltC_SoftBodyManifold_HasContact(const JoltC_SoftBodyManifold* manifold, uint32_t vertexIndex)
+{
+    if (!manifold) return 0;
+    const Array<SoftBodyVertex>& vertices = asManifold(manifold)->GetVertices();
+    if (vertexIndex >= vertices.size()) return 0;
+    return asManifold(manifold)->HasContact(vertices[vertexIndex]) ? 1 : 0;
+}
+
+JOLTC_API void JoltC_SoftBodyManifold_GetLocalContactPoint(const JoltC_SoftBodyManifold* manifold, uint32_t vertexIndex, JoltC_Vec3* outPoint)
+{
+    if (!manifold || !outPoint) return;
+    const Array<SoftBodyVertex>& vertices = asManifold(manifold)->GetVertices();
+    if (vertexIndex >= vertices.size()) return;
+    *outPoint = fromJphVec3(asManifold(manifold)->GetLocalContactPoint(vertices[vertexIndex]));
+}
+
+JOLTC_API void JoltC_SoftBodyManifold_GetContactNormal(const JoltC_SoftBodyManifold* manifold, uint32_t vertexIndex, JoltC_Vec3* outNormal)
+{
+    if (!manifold || !outNormal) return;
+    const Array<SoftBodyVertex>& vertices = asManifold(manifold)->GetVertices();
+    if (vertexIndex >= vertices.size()) return;
+    *outNormal = fromJphVec3(asManifold(manifold)->GetContactNormal(vertices[vertexIndex]));
+}
+
+JOLTC_API JoltC_BodyID JoltC_SoftBodyManifold_GetContactBodyID(const JoltC_SoftBodyManifold* manifold, uint32_t vertexIndex)
+{
+    if (!manifold) return JOLTC_BODY_ID_INVALID;
+    const Array<SoftBodyVertex>& vertices = asManifold(manifold)->GetVertices();
+    if (vertexIndex >= vertices.size()) return JOLTC_BODY_ID_INVALID;
+    return fromJphBodyID(asManifold(manifold)->GetContactBodyID(vertices[vertexIndex]));
+}
+
+JOLTC_API uint32_t JoltC_SoftBodyManifold_GetNumSensorContacts(const JoltC_SoftBodyManifold* manifold)
+{
+    if (!manifold) return 0;
+    return asManifold(manifold)->GetNumSensorContacts();
+}
+
+JOLTC_API JoltC_BodyID JoltC_SoftBodyManifold_GetSensorContactBodyID(const JoltC_SoftBodyManifold* manifold, uint32_t index)
+{
+    if (!manifold) return JOLTC_BODY_ID_INVALID;
+    if (index >= asManifold(manifold)->GetNumSensorContacts()) return JOLTC_BODY_ID_INVALID;
+    return fromJphBodyID(asManifold(manifold)->GetSensorContactBodyID(index));
 }
 
 } /* extern "C" */

@@ -23,9 +23,11 @@ JOLTC_API JoltC_BroadPhaseLayerFilter* JoltC_BroadPhaseLayerFilter_Create(
     if (!fn) return nullptr;
     JOLTC_TRY_BEGIN
     auto* w = new JoltC_BroadPhaseLayerFilter;
-    w->ptr = std::make_unique<BroadPhaseLayerFilterCallback>();
-    w->ptr->fn = fn;
-    w->ptr->userData = userData;
+    auto callback = std::make_unique<BroadPhaseLayerFilterCallback>();
+    callback->fn = fn;
+    callback->userData = userData;
+    w->callback = callback.get();
+    w->ptr = std::move(callback);
     return w;
     JOLTC_TRY_END
     return nullptr;
@@ -45,9 +47,11 @@ JOLTC_API JoltC_ObjectLayerFilter* JoltC_ObjectLayerFilter_Create(
     if (!fn) return nullptr;
     JOLTC_TRY_BEGIN
     auto* w = new JoltC_ObjectLayerFilter;
-    w->ptr = std::make_unique<ObjectLayerFilterCallback>();
-    w->ptr->fn = fn;
-    w->ptr->userData = userData;
+    auto callback = std::make_unique<ObjectLayerFilterCallback>();
+    callback->fn = fn;
+    callback->userData = userData;
+    w->callback = callback.get();
+    w->ptr = std::move(callback);
     return w;
     JOLTC_TRY_END
     return nullptr;
@@ -141,19 +145,21 @@ JOLTC_API void JoltC_SimShapeFilter_Destroy(JoltC_SimShapeFilter* filter) {
 /* -------------------------------------------------------------------------- */
 JOLTC_API void JoltC_BroadPhaseLayerFilter_SetProcs(JoltC_BroadPhaseLayerFilter* filter, JoltC_BroadPhaseLayerFilter_Procs procs, void* userData)
 {
-    if (!filter || !filter->ptr) return;
+    /* Only the callback kind has procs to write; a default filter obtained from the system does
+     * not, and quietly ignoring the call beats writing through the wrong type. */
+    if (!filter || !filter->callback) return;
     JOLTC_TRY_BEGIN
-    filter->ptr->fn       = procs.shouldCollide;
-    filter->ptr->userData = userData;
+    filter->callback->fn       = procs.shouldCollide;
+    filter->callback->userData = userData;
     JOLTC_TRY_END
 }
 
 JOLTC_API void JoltC_ObjectLayerFilter_SetProcs(JoltC_ObjectLayerFilter* filter, JoltC_ObjectLayerFilter_Procs procs, void* userData)
 {
-    if (!filter || !filter->ptr) return;
+    if (!filter || !filter->callback) return;
     JOLTC_TRY_BEGIN
-    filter->ptr->fn       = procs.shouldCollide;
-    filter->ptr->userData = userData;
+    filter->callback->fn       = procs.shouldCollide;
+    filter->callback->userData = userData;
     JOLTC_TRY_END
 }
 

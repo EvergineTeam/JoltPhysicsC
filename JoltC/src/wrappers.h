@@ -61,10 +61,21 @@ struct JoltC_JobSystem {
 };
 
 /* -------------------------------------------------------------------------- */
+/*  BroadPhaseQuery — non-owning, obtained from PhysicsSystem                */
+/* -------------------------------------------------------------------------- */
+struct JoltC_BroadPhaseQuery {
+    const BroadPhaseQuery* ptr;
+};
+
+/* -------------------------------------------------------------------------- */
 /*  PhysicsSystem wrapper                                                     */
 /* -------------------------------------------------------------------------- */
 struct JoltC_PhysicsSystem {
     std::unique_ptr<PhysicsSystem> ptr;
+
+    /* Handed out by GetBroadPhaseQuery. Owned per system, because the thread_local this replaces
+     * meant a second system's Get invalidated the first system's pointer on the same thread. */
+    JoltC_BroadPhaseQuery broadPhaseQuery { nullptr };
 };
 
 /* -------------------------------------------------------------------------- */
@@ -298,7 +309,12 @@ public:
     }
 };
 struct JoltC_BroadPhaseLayerFilter {
-    std::unique_ptr<BroadPhaseLayerFilterCallback> ptr;
+    /* Base typed, because a filter handle can now also carry one of the system's own default
+     * filters, not only the callback kind. */
+    std::unique_ptr<BroadPhaseLayerFilter> ptr;
+
+    /* Set only when ptr is the callback kind; SetProcs has nothing to write to otherwise. */
+    BroadPhaseLayerFilterCallback* callback = nullptr;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -313,7 +329,8 @@ public:
     }
 };
 struct JoltC_ObjectLayerFilter {
-    std::unique_ptr<ObjectLayerFilterCallback> ptr;
+    std::unique_ptr<ObjectLayerFilter> ptr;
+    ObjectLayerFilterCallback* callback = nullptr;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -420,13 +437,6 @@ struct JoltC_PhysicsMaterial {
 /* -------------------------------------------------------------------------- */
 struct JoltC_GroupFilter {
     Ref<GroupFilter> ptr;
-};
-
-/* -------------------------------------------------------------------------- */
-/*  BroadPhaseQuery — non-owning, obtained from PhysicsSystem                */
-/* -------------------------------------------------------------------------- */
-struct JoltC_BroadPhaseQuery {
-    const BroadPhaseQuery* ptr;
 };
 
 /* -------------------------------------------------------------------------- */

@@ -306,6 +306,44 @@ JOLTC_API void JoltC_NarrowPhaseQuery_CollideShape(
     JOLTC_TRY_END
 }
 
+JOLTC_API void JoltC_NarrowPhaseQuery_CollideShape2(
+    const JoltC_NarrowPhaseQuery* query,
+    const JoltC_Shape* shape,
+    JoltC_Vec3 scale,
+    JoltC_Mat44 centerOfMassTransform,
+    const JoltC_CollideShapeSettings* collideSettings,
+    JoltC_RVec3 baseOffset,
+    JoltC_CollideShapeResultFn callback, void* userData,
+    const JoltC_BroadPhaseLayerFilter* bpFilter,
+    const JoltC_ObjectLayerFilter* olFilter,
+    const JoltC_BodyFilter* bodyFilter,
+    const JoltC_ShapeFilter* shapeFilter)
+{
+    if (!query || !shape || !callback) return;
+    JOLTC_TRY_BEGIN
+    const auto* jphShape = reinterpret_cast<const Shape*>(shape);
+    RMat44 com = toJphMat44FromBlittable(centerOfMassTransform);
+
+    /* The settings struct existed for a long time with an Init helper and nothing that accepted
+     * it. This is its consumer. Null keeps the defaults, same as the older entry point. */
+    CollideShapeSettings settings;
+    if (collideSettings)
+    {
+        settings.mBackFaceMode = toJphBackFaceMode(collideSettings->backFaceMode);
+        settings.mMaxSeparationDistance = collideSettings->maxSeparationDistance;
+        settings.mCollisionTolerance = collideSettings->collisionTolerance;
+        settings.mPenetrationTolerance = collideSettings->penetrationTolerance;
+        settings.mInternalEdgeRemovalVertexToleranceSq = collideSettings->internalEdgeRemovalVertexToleranceSq;
+    }
+
+    CollideShapeCallbackCollector collector;
+    collector.fn = callback;
+    collector.userData = userData;
+    query->ptr->CollideShape(jphShape, toJphVec3(scale), com, settings, toJphRVec3(baseOffset), collector,
+                             bpf(bpFilter), olf(olFilter), bf(bodyFilter), sf(shapeFilter));
+    JOLTC_TRY_END
+}
+
 /* -------------------------------------------------------------------------- */
 /*  CastShape                                                                 */
 /* -------------------------------------------------------------------------- */
@@ -346,16 +384,88 @@ JOLTC_API void JoltC_NarrowPhaseQuery_CastShape(
     JOLTC_TRY_END
 }
 
+JOLTC_API void JoltC_NarrowPhaseQuery_CastShape2(
+    const JoltC_NarrowPhaseQuery* query,
+    const JoltC_Shape* shape,
+    JoltC_Vec3 scale,
+    JoltC_Mat44 centerOfMassTransform,
+    JoltC_Vec3 direction,
+    const JoltC_ShapeCastSettings* castSettings,
+    JoltC_RVec3 baseOffset,
+    JoltC_CastShapeResultFn callback, void* userData,
+    const JoltC_BroadPhaseLayerFilter* bpFilter,
+    const JoltC_ObjectLayerFilter* olFilter,
+    const JoltC_BodyFilter* bodyFilter,
+    const JoltC_ShapeFilter* shapeFilter)
+{
+    if (!query || !shape || !callback) return;
+    JOLTC_TRY_BEGIN
+    const auto* jphShape = reinterpret_cast<const Shape*>(shape);
+    RMat44 com = toJphMat44FromBlittable(centerOfMassTransform);
+    RShapeCast shapeCast(jphShape, toJphVec3(scale), com, toJphVec3(direction));
+
+    ShapeCastSettings settings;
+    if (castSettings)
+    {
+        settings.mBackFaceModeTriangles = toJphBackFaceMode(castSettings->backFaceModeTriangles);
+        settings.mBackFaceModeConvex = toJphBackFaceMode(castSettings->backFaceModeConvex);
+        settings.mUseShrunkenShapeAndConvexRadius = castSettings->useShrunkenShapeAndConvexRadius != 0;
+        settings.mReturnDeepestPoint = castSettings->returnDeepestPoint != 0;
+        settings.mCollisionTolerance = castSettings->collisionTolerance;
+        settings.mPenetrationTolerance = castSettings->penetrationTolerance;
+        settings.mExtraConvexRadius = castSettings->extraConvexRadius;
+    }
+
+    CastShapeCallbackCollector collector;
+    collector.fn = callback;
+    collector.userData = userData;
+    query->ptr->CastShape(shapeCast, settings, toJphRVec3(baseOffset), collector,
+                          bpf(bpFilter), olf(olFilter), bf(bodyFilter), sf(shapeFilter));
+    JOLTC_TRY_END
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Default layer filters                                                     */
+/* -------------------------------------------------------------------------- */
+/* The system's own layer logic packaged as filters, so a caller querying "what layer X can hit"
+ * passes these instead of rebuilding the layer matrix on its side. They reference the system's
+ * interfaces, so they are valid only while the system is. */
+JOLTC_API JoltC_BroadPhaseLayerFilter* JoltC_PhysicsSystem_GetDefaultBroadPhaseLayerFilter(const JoltC_PhysicsSystem* system, JoltC_ObjectLayer layer)
+{
+    if (!system) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* w = new JoltC_BroadPhaseLayerFilter;
+
+    /* Direct initialization from the prvalue, which guaranteed copy elision builds in place:
+     * the filter type is non copyable, so make_unique's forwarding cannot produce one. */
+    w->ptr.reset(new DefaultBroadPhaseLayerFilter(system->ptr->GetDefaultBroadPhaseLayerFilter(layer)));
+    return w;
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API JoltC_ObjectLayerFilter* JoltC_PhysicsSystem_GetDefaultLayerFilter(const JoltC_PhysicsSystem* system, JoltC_ObjectLayer layer)
+{
+    if (!system) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* w = new JoltC_ObjectLayerFilter;
+    w->ptr.reset(new DefaultObjectLayerFilter(system->ptr->GetDefaultLayerFilter(layer)));
+    return w;
+    JOLTC_TRY_END
+    return nullptr;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  BroadPhaseQuery access                                                    */
 /* -------------------------------------------------------------------------- */
-static thread_local JoltC_BroadPhaseQuery s_bpq;
-
 JOLTC_API const JoltC_BroadPhaseQuery* JoltC_PhysicsSystem_GetBroadPhaseQuery(const JoltC_PhysicsSystem* system) {
     if (!system) return nullptr;
     JOLTC_TRY_BEGIN
-    s_bpq.ptr = &system->ptr->GetBroadPhaseQuery();
-    return &s_bpq;
+    /* Stored on the system wrapper rather than in a thread_local: with two systems on one thread,
+     * the shared slot meant the second Get quietly invalidated the first system's pointer. */
+    auto* mutableSystem = const_cast<JoltC_PhysicsSystem*>(system);
+    mutableSystem->broadPhaseQuery.ptr = &system->ptr->GetBroadPhaseQuery();
+    return &mutableSystem->broadPhaseQuery;
     JOLTC_TRY_END
     return nullptr;
 }

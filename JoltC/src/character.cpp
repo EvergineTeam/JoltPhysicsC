@@ -796,6 +796,148 @@ JOLTC_API int JoltC_CharacterVirtual_WalkStairs(JoltC_CharacterVirtual* c, float
 }
 
 /* -------------------------------------------------------------------------- */
+/*  Simulation with collision filters                                         */
+/* -------------------------------------------------------------------------- */
+/* The plain entry points above pass default constructed filters, and a default filter says yes to
+ * everything: a character simulated through them collides with every layer there is, sensors
+ * included, and no work on the caller's side can narrow that. These variants take the same four
+ * filters every C++ signature has taken all along. Null means the permissive default, so a caller
+ * can pass only the ones it cares about. */
+static const BroadPhaseLayerFilter& characterBpFilter(const JoltC_BroadPhaseLayerFilter* f) {
+    static BroadPhaseLayerFilter sDefault;
+    return f ? *f->ptr : sDefault;
+}
+static const ObjectLayerFilter& characterOlFilter(const JoltC_ObjectLayerFilter* f) {
+    static ObjectLayerFilter sDefault;
+    return f ? *f->ptr : sDefault;
+}
+static const BodyFilter& characterBodyFilter(const JoltC_BodyFilter* f) {
+    static BodyFilter sDefault;
+    return f ? *f->ptr : sDefault;
+}
+static const ShapeFilter& characterShapeFilter(const JoltC_ShapeFilter* f) {
+    static ShapeFilter sDefault;
+    return f ? *f->ptr : sDefault;
+}
+
+JOLTC_API void JoltC_CharacterVirtual_Update_WithFilters(
+    JoltC_CharacterVirtual* c, float dt, JoltC_Vec3 gravity,
+    const JoltC_BroadPhaseLayerFilter* bpFilter,
+    const JoltC_ObjectLayerFilter* olFilter,
+    const JoltC_BodyFilter* bodyFilter,
+    const JoltC_ShapeFilter* shapeFilter,
+    JoltC_TempAllocator* allocator)
+{
+    if (!c || !allocator) return;
+    JOLTC_TRY_BEGIN
+    cv(c)->Update(dt, toJphVec3(gravity),
+        characterBpFilter(bpFilter), characterOlFilter(olFilter),
+        characterBodyFilter(bodyFilter), characterShapeFilter(shapeFilter),
+        *allocator->ptr);
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_CharacterVirtual_ExtendedUpdate_WithFilters(
+    JoltC_CharacterVirtual* c, float dt, JoltC_Vec3 gravity,
+    const JoltC_ExtendedUpdateSettings* s,
+    const JoltC_BroadPhaseLayerFilter* bpFilter,
+    const JoltC_ObjectLayerFilter* olFilter,
+    const JoltC_BodyFilter* bodyFilter,
+    const JoltC_ShapeFilter* shapeFilter,
+    JoltC_TempAllocator* allocator)
+{
+    if (!c || !s || !allocator) return;
+    JOLTC_TRY_BEGIN
+    CharacterVirtual::ExtendedUpdateSettings eus;
+    eus.mStickToFloorStepDown = toJphVec3(s->stickToFloorStepDown);
+    eus.mWalkStairsStepUp = toJphVec3(s->walkStairsStepUp);
+    eus.mWalkStairsMinStepForward = s->walkStairsMinStepForward;
+    eus.mWalkStairsStepForwardTest = s->walkStairsStepForwardTest;
+    eus.mWalkStairsCosAngleForwardContact = s->walkStairsCosAngleForwardContact;
+    eus.mWalkStairsStepDownExtra = toJphVec3(s->walkStairsStepDownExtra);
+    cv(c)->ExtendedUpdate(dt, toJphVec3(gravity), eus,
+        characterBpFilter(bpFilter), characterOlFilter(olFilter),
+        characterBodyFilter(bodyFilter), characterShapeFilter(shapeFilter),
+        *allocator->ptr);
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_CharacterVirtual_RefreshContacts_WithFilters(
+    JoltC_CharacterVirtual* c,
+    const JoltC_BroadPhaseLayerFilter* bpFilter,
+    const JoltC_ObjectLayerFilter* olFilter,
+    const JoltC_BodyFilter* bodyFilter,
+    const JoltC_ShapeFilter* shapeFilter,
+    JoltC_TempAllocator* allocator)
+{
+    if (!c || !allocator) return;
+    JOLTC_TRY_BEGIN
+    cv(c)->RefreshContacts(
+        characterBpFilter(bpFilter), characterOlFilter(olFilter),
+        characterBodyFilter(bodyFilter), characterShapeFilter(shapeFilter),
+        *allocator->ptr);
+    JOLTC_TRY_END
+}
+
+JOLTC_API JoltC_Bool JoltC_CharacterVirtual_SetShape_WithFilters(
+    JoltC_CharacterVirtual* c, const JoltC_Shape* shape, float maxPenetrationDepth,
+    const JoltC_BroadPhaseLayerFilter* bpFilter,
+    const JoltC_ObjectLayerFilter* olFilter,
+    const JoltC_BodyFilter* bodyFilter,
+    const JoltC_ShapeFilter* shapeFilter,
+    JoltC_TempAllocator* allocator)
+{
+    if (!c || !shape || !allocator) return JOLTC_FALSE;
+    JOLTC_TRY_BEGIN
+    bool result = cv(c)->SetShape(
+        reinterpret_cast<const Shape*>(shape), maxPenetrationDepth,
+        characterBpFilter(bpFilter), characterOlFilter(olFilter),
+        characterBodyFilter(bodyFilter), characterShapeFilter(shapeFilter),
+        *allocator->ptr);
+    return result ? JOLTC_TRUE : JOLTC_FALSE;
+    JOLTC_TRY_END
+    return JOLTC_FALSE;
+}
+
+JOLTC_API int JoltC_CharacterVirtual_StickToFloor_WithFilters(
+    JoltC_CharacterVirtual* c, JoltC_Vec3 stepDown,
+    const JoltC_BroadPhaseLayerFilter* bpFilter,
+    const JoltC_ObjectLayerFilter* olFilter,
+    const JoltC_BodyFilter* bodyFilter,
+    const JoltC_ShapeFilter* shapeFilter,
+    JoltC_TempAllocator* allocator)
+{
+    if (!c || !allocator) return 0;
+    JOLTC_TRY_BEGIN
+    return cv(c)->StickToFloor(toJphVec3(stepDown),
+        characterBpFilter(bpFilter), characterOlFilter(olFilter),
+        characterBodyFilter(bodyFilter), characterShapeFilter(shapeFilter),
+        *allocator->ptr) ? 1 : 0;
+    JOLTC_TRY_END
+    return 0;
+}
+
+JOLTC_API int JoltC_CharacterVirtual_WalkStairs_WithFilters(
+    JoltC_CharacterVirtual* c, float deltaTime,
+    JoltC_Vec3 stepUp, JoltC_Vec3 stepForward, JoltC_Vec3 stepForwardTest, JoltC_Vec3 stepDownExtra,
+    const JoltC_BroadPhaseLayerFilter* bpFilter,
+    const JoltC_ObjectLayerFilter* olFilter,
+    const JoltC_BodyFilter* bodyFilter,
+    const JoltC_ShapeFilter* shapeFilter,
+    JoltC_TempAllocator* allocator)
+{
+    if (!c || !allocator) return 0;
+    JOLTC_TRY_BEGIN
+    return cv(c)->WalkStairs(deltaTime, toJphVec3(stepUp), toJphVec3(stepForward),
+        toJphVec3(stepForwardTest), toJphVec3(stepDownExtra),
+        characterBpFilter(bpFilter), characterOlFilter(olFilter),
+        characterBodyFilter(bodyFilter), characterShapeFilter(shapeFilter),
+        *allocator->ptr) ? 1 : 0;
+    JOLTC_TRY_END
+    return 0;
+}
+
+/* -------------------------------------------------------------------------- */
 /*  CharacterContactListener SetProcs                                         */
 /* -------------------------------------------------------------------------- */
 JOLTC_API void JoltC_CharacterContactListener_SetProcs(JoltC_CharacterContactListener* listener,

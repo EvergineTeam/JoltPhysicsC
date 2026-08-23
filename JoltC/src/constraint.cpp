@@ -132,6 +132,24 @@ JOLTC_API void JoltC_PhysicsSystem_RemoveConstraint(JoltC_PhysicsSystem* system,
 /* -------------------------------------------------------------------------- */
 /*  PointConstraint                                                           */
 /* -------------------------------------------------------------------------- */
+/* The fill helpers exist so the same conversion feeds two consumers: Create, which solves the
+ * constraint between two live bodies, and CreateSettings, which hands the settings object itself
+ * to whoever needs one unattached -- ragdoll parts above all, whose SetPartToParent takes settings
+ * and had no way to obtain any. */
+static void fillPoint(PointConstraintSettings& settings, const JoltC_PointConstraintSettings* s)
+{
+    settings.mSpace = toJphConstraintSpace(s->space);
+    settings.mPoint1 = toJphRVec3(s->point1);
+    settings.mPoint2 = toJphRVec3(s->point2);
+}
+
+/* Wraps a freshly built settings object for the C side with one reference the caller owns. */
+static JoltC_TwoBodyConstraintSettings* wrapTwoBodySettings(TwoBodyConstraintSettings* settings)
+{
+    settings->AddRef();
+    return reinterpret_cast<JoltC_TwoBodyConstraintSettings*>(settings);
+}
+
 JOLTC_API JoltC_Constraint* JoltC_PointConstraint_Create(
     JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
     const JoltC_PointConstraintSettings* s)
@@ -139,10 +157,19 @@ JOLTC_API JoltC_Constraint* JoltC_PointConstraint_Create(
     if (!system || !s) return nullptr;
     JOLTC_TRY_BEGIN
     PointConstraintSettings settings;
-    settings.mSpace = toJphConstraintSpace(s->space);
-    settings.mPoint1 = toJphRVec3(s->point1);
-    settings.mPoint2 = toJphRVec3(s->point2);
+    fillPoint(settings, s);
     return createTwoBody(system, b1, b2, settings);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API JoltC_TwoBodyConstraintSettings* JoltC_PointConstraintSettings_CreateSettings(const JoltC_PointConstraintSettings* s)
+{
+    if (!s) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* settings = new PointConstraintSettings();
+    fillPoint(*settings, s);
+    return wrapTwoBodySettings(settings);
     JOLTC_TRY_END
     return nullptr;
 }
@@ -164,13 +191,8 @@ JOLTC_API void JoltC_PointConstraint_SetPoint2(JoltC_Constraint* c, JoltC_Constr
 /* -------------------------------------------------------------------------- */
 /*  FixedConstraint                                                           */
 /* -------------------------------------------------------------------------- */
-JOLTC_API JoltC_Constraint* JoltC_FixedConstraint_Create(
-    JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
-    const JoltC_FixedConstraintSettings* s)
+static void fillFixed(FixedConstraintSettings& settings, const JoltC_FixedConstraintSettings* s)
 {
-    if (!system || !s) return nullptr;
-    JOLTC_TRY_BEGIN
-    FixedConstraintSettings settings;
     settings.mSpace = toJphConstraintSpace(s->space);
     settings.mAutoDetectPoint = s->autoDetectPoint != 0;
     settings.mPoint1 = toJphRVec3(s->point1);
@@ -179,7 +201,28 @@ JOLTC_API JoltC_Constraint* JoltC_FixedConstraint_Create(
     settings.mPoint2 = toJphRVec3(s->point2);
     settings.mAxisX2 = toJphVec3(s->axisX2);
     settings.mAxisY2 = toJphVec3(s->axisY2);
+}
+
+JOLTC_API JoltC_Constraint* JoltC_FixedConstraint_Create(
+    JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
+    const JoltC_FixedConstraintSettings* s)
+{
+    if (!system || !s) return nullptr;
+    JOLTC_TRY_BEGIN
+    FixedConstraintSettings settings;
+    fillFixed(settings, s);
     return createTwoBody(system, b1, b2, settings);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API JoltC_TwoBodyConstraintSettings* JoltC_FixedConstraintSettings_CreateSettings(const JoltC_FixedConstraintSettings* s)
+{
+    if (!s) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* settings = new FixedConstraintSettings();
+    fillFixed(*settings, s);
+    return wrapTwoBodySettings(settings);
     JOLTC_TRY_END
     return nullptr;
 }
@@ -187,6 +230,16 @@ JOLTC_API JoltC_Constraint* JoltC_FixedConstraint_Create(
 /* -------------------------------------------------------------------------- */
 /*  DistanceConstraint                                                        */
 /* -------------------------------------------------------------------------- */
+static void fillDistance(DistanceConstraintSettings& settings, const JoltC_DistanceConstraintSettings* s)
+{
+    settings.mSpace = toJphConstraintSpace(s->space);
+    settings.mPoint1 = toJphRVec3(s->point1);
+    settings.mPoint2 = toJphRVec3(s->point2);
+    settings.mMinDistance = s->minDistance;
+    settings.mMaxDistance = s->maxDistance;
+    settings.mLimitsSpringSettings = toJphSpringSettings(s->limitsSpringSettings);
+}
+
 JOLTC_API JoltC_Constraint* JoltC_DistanceConstraint_Create(
     JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
     const JoltC_DistanceConstraintSettings* s)
@@ -194,13 +247,19 @@ JOLTC_API JoltC_Constraint* JoltC_DistanceConstraint_Create(
     if (!system || !s) return nullptr;
     JOLTC_TRY_BEGIN
     DistanceConstraintSettings settings;
-    settings.mSpace = toJphConstraintSpace(s->space);
-    settings.mPoint1 = toJphRVec3(s->point1);
-    settings.mPoint2 = toJphRVec3(s->point2);
-    settings.mMinDistance = s->minDistance;
-    settings.mMaxDistance = s->maxDistance;
-    settings.mLimitsSpringSettings = toJphSpringSettings(s->limitsSpringSettings);
+    fillDistance(settings, s);
     return createTwoBody(system, b1, b2, settings);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API JoltC_TwoBodyConstraintSettings* JoltC_DistanceConstraintSettings_CreateSettings(const JoltC_DistanceConstraintSettings* s)
+{
+    if (!s) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* settings = new DistanceConstraintSettings();
+    fillDistance(*settings, s);
+    return wrapTwoBodySettings(settings);
     JOLTC_TRY_END
     return nullptr;
 }
@@ -231,13 +290,8 @@ JOLTC_API float JoltC_DistanceConstraint_GetMaxDistance(const JoltC_Constraint* 
 /* -------------------------------------------------------------------------- */
 /*  HingeConstraint                                                           */
 /* -------------------------------------------------------------------------- */
-JOLTC_API JoltC_Constraint* JoltC_HingeConstraint_Create(
-    JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
-    const JoltC_HingeConstraintSettings* s)
+static void fillHinge(HingeConstraintSettings& settings, const JoltC_HingeConstraintSettings* s)
 {
-    if (!system || !s) return nullptr;
-    JOLTC_TRY_BEGIN
-    HingeConstraintSettings settings;
     settings.mSpace = toJphConstraintSpace(s->space);
     settings.mPoint1 = toJphRVec3(s->point1);
     settings.mHingeAxis1 = toJphVec3(s->hingeAxis1);
@@ -250,7 +304,28 @@ JOLTC_API JoltC_Constraint* JoltC_HingeConstraint_Create(
     settings.mLimitsSpringSettings = toJphSpringSettings(s->limitsSpringSettings);
     settings.mMaxFrictionTorque = s->maxFrictionTorque;
     settings.mMotorSettings = toJphMotorSettings(s->motorSettings);
+}
+
+JOLTC_API JoltC_Constraint* JoltC_HingeConstraint_Create(
+    JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
+    const JoltC_HingeConstraintSettings* s)
+{
+    if (!system || !s) return nullptr;
+    JOLTC_TRY_BEGIN
+    HingeConstraintSettings settings;
+    fillHinge(settings, s);
     return createTwoBody(system, b1, b2, settings);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API JoltC_TwoBodyConstraintSettings* JoltC_HingeConstraintSettings_CreateSettings(const JoltC_HingeConstraintSettings* s)
+{
+    if (!s) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* settings = new HingeConstraintSettings();
+    fillHinge(*settings, s);
+    return wrapTwoBodySettings(settings);
     JOLTC_TRY_END
     return nullptr;
 }
@@ -357,13 +432,8 @@ JOLTC_API float JoltC_HingeConstraint_GetMaxFrictionTorque(const JoltC_Constrain
 /* -------------------------------------------------------------------------- */
 /*  SliderConstraint                                                          */
 /* -------------------------------------------------------------------------- */
-JOLTC_API JoltC_Constraint* JoltC_SliderConstraint_Create(
-    JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
-    const JoltC_SliderConstraintSettings* s)
+static void fillSlider(SliderConstraintSettings& settings, const JoltC_SliderConstraintSettings* s)
 {
-    if (!system || !s) return nullptr;
-    JOLTC_TRY_BEGIN
-    SliderConstraintSettings settings;
     settings.mSpace = toJphConstraintSpace(s->space);
     settings.mAutoDetectPoint = s->autoDetectPoint != 0;
     settings.mPoint1 = toJphRVec3(s->point1);
@@ -377,7 +447,28 @@ JOLTC_API JoltC_Constraint* JoltC_SliderConstraint_Create(
     settings.mLimitsSpringSettings = toJphSpringSettings(s->limitsSpringSettings);
     settings.mMaxFrictionForce = s->maxFrictionForce;
     settings.mMotorSettings = toJphMotorSettings(s->motorSettings);
+}
+
+JOLTC_API JoltC_Constraint* JoltC_SliderConstraint_Create(
+    JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
+    const JoltC_SliderConstraintSettings* s)
+{
+    if (!system || !s) return nullptr;
+    JOLTC_TRY_BEGIN
+    SliderConstraintSettings settings;
+    fillSlider(settings, s);
     return createTwoBody(system, b1, b2, settings);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API JoltC_TwoBodyConstraintSettings* JoltC_SliderConstraintSettings_CreateSettings(const JoltC_SliderConstraintSettings* s)
+{
+    if (!s) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* settings = new SliderConstraintSettings();
+    fillSlider(*settings, s);
+    return wrapTwoBodySettings(settings);
     JOLTC_TRY_END
     return nullptr;
 }
@@ -484,6 +575,16 @@ JOLTC_API float JoltC_SliderConstraint_GetMaxFrictionForce(const JoltC_Constrain
 /* -------------------------------------------------------------------------- */
 /*  ConeConstraint                                                            */
 /* -------------------------------------------------------------------------- */
+static void fillCone(ConeConstraintSettings& settings, const JoltC_ConeConstraintSettings* s)
+{
+    settings.mSpace = toJphConstraintSpace(s->space);
+    settings.mPoint1 = toJphRVec3(s->point1);
+    settings.mTwistAxis1 = toJphVec3(s->twistAxis1);
+    settings.mPoint2 = toJphRVec3(s->point2);
+    settings.mTwistAxis2 = toJphVec3(s->twistAxis2);
+    settings.mHalfConeAngle = s->halfConeAngle;
+}
+
 JOLTC_API JoltC_Constraint* JoltC_ConeConstraint_Create(
     JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
     const JoltC_ConeConstraintSettings* s)
@@ -491,13 +592,19 @@ JOLTC_API JoltC_Constraint* JoltC_ConeConstraint_Create(
     if (!system || !s) return nullptr;
     JOLTC_TRY_BEGIN
     ConeConstraintSettings settings;
-    settings.mSpace = toJphConstraintSpace(s->space);
-    settings.mPoint1 = toJphRVec3(s->point1);
-    settings.mTwistAxis1 = toJphVec3(s->twistAxis1);
-    settings.mPoint2 = toJphRVec3(s->point2);
-    settings.mTwistAxis2 = toJphVec3(s->twistAxis2);
-    settings.mHalfConeAngle = s->halfConeAngle;
+    fillCone(settings, s);
     return createTwoBody(system, b1, b2, settings);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API JoltC_TwoBodyConstraintSettings* JoltC_ConeConstraintSettings_CreateSettings(const JoltC_ConeConstraintSettings* s)
+{
+    if (!s) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* settings = new ConeConstraintSettings();
+    fillCone(*settings, s);
+    return wrapTwoBodySettings(settings);
     JOLTC_TRY_END
     return nullptr;
 }
@@ -520,13 +627,8 @@ JOLTC_API float JoltC_ConeConstraint_GetCosHalfConeAngle(const JoltC_Constraint*
 /* -------------------------------------------------------------------------- */
 /*  SwingTwistConstraint                                                      */
 /* -------------------------------------------------------------------------- */
-JOLTC_API JoltC_Constraint* JoltC_SwingTwistConstraint_Create(
-    JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
-    const JoltC_SwingTwistConstraintSettings* s)
+static void fillSwingTwist(SwingTwistConstraintSettings& settings, const JoltC_SwingTwistConstraintSettings* s)
 {
-    if (!system || !s) return nullptr;
-    JOLTC_TRY_BEGIN
-    SwingTwistConstraintSettings settings;
     settings.mSpace = toJphConstraintSpace(s->space);
     settings.mPosition1 = toJphRVec3(s->position1);
     settings.mTwistAxis1 = toJphVec3(s->twistAxis1);
@@ -542,7 +644,28 @@ JOLTC_API JoltC_Constraint* JoltC_SwingTwistConstraint_Create(
     settings.mMaxFrictionTorque = s->maxFrictionTorque;
     settings.mSwingMotorSettings = toJphMotorSettings(s->swingMotorSettings);
     settings.mTwistMotorSettings = toJphMotorSettings(s->twistMotorSettings);
+}
+
+JOLTC_API JoltC_Constraint* JoltC_SwingTwistConstraint_Create(
+    JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
+    const JoltC_SwingTwistConstraintSettings* s)
+{
+    if (!system || !s) return nullptr;
+    JOLTC_TRY_BEGIN
+    SwingTwistConstraintSettings settings;
+    fillSwingTwist(settings, s);
     return createTwoBody(system, b1, b2, settings);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API JoltC_TwoBodyConstraintSettings* JoltC_SwingTwistConstraintSettings_CreateSettings(const JoltC_SwingTwistConstraintSettings* s)
+{
+    if (!s) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* settings = new SwingTwistConstraintSettings();
+    fillSwingTwist(*settings, s);
+    return wrapTwoBodySettings(settings);
     JOLTC_TRY_END
     return nullptr;
 }
@@ -576,13 +699,8 @@ JOLTC_API float JoltC_SwingTwistConstraint_GetMaxFrictionTorque(const JoltC_Cons
 /* -------------------------------------------------------------------------- */
 /*  SixDOFConstraint                                                          */
 /* -------------------------------------------------------------------------- */
-JOLTC_API JoltC_Constraint* JoltC_SixDOFConstraint_Create(
-    JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
-    const JoltC_SixDOFConstraintSettings* s)
+static void fillSixDOF(SixDOFConstraintSettings& settings, const JoltC_SixDOFConstraintSettings* s)
 {
-    if (!system || !s) return nullptr;
-    JOLTC_TRY_BEGIN
-    SixDOFConstraintSettings settings;
     settings.mSpace = toJphConstraintSpace(s->space);
     settings.mPosition1 = toJphRVec3(s->position1);
     settings.mAxisX1 = toJphVec3(s->axisX1);
@@ -599,7 +717,28 @@ JOLTC_API JoltC_Constraint* JoltC_SixDOFConstraint_Create(
     }
     for (int i = 0; i < 3; i++)
         settings.mLimitsSpringSettings[i] = toJphSpringSettings(s->limitsSpringSettings[i]);
+}
+
+JOLTC_API JoltC_Constraint* JoltC_SixDOFConstraint_Create(
+    JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
+    const JoltC_SixDOFConstraintSettings* s)
+{
+    if (!system || !s) return nullptr;
+    JOLTC_TRY_BEGIN
+    SixDOFConstraintSettings settings;
+    fillSixDOF(settings, s);
     return createTwoBody(system, b1, b2, settings);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API JoltC_TwoBodyConstraintSettings* JoltC_SixDOFConstraintSettings_CreateSettings(const JoltC_SixDOFConstraintSettings* s)
+{
+    if (!s) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* settings = new SixDOFConstraintSettings();
+    fillSixDOF(*settings, s);
+    return wrapTwoBodySettings(settings);
     JOLTC_TRY_END
     return nullptr;
 }
@@ -653,6 +792,14 @@ JOLTC_API JoltC_Constraint* JoltC_PulleyConstraint_Create(
 /* -------------------------------------------------------------------------- */
 /*  GearConstraint                                                            */
 /* -------------------------------------------------------------------------- */
+static void fillGear(GearConstraintSettings& settings, const JoltC_GearConstraintSettings* s)
+{
+    settings.mSpace = toJphConstraintSpace(s->space);
+    settings.mHingeAxis1 = toJphVec3(s->hingeAxis1);
+    settings.mHingeAxis2 = toJphVec3(s->hingeAxis2);
+    settings.mRatio = s->ratio;
+}
+
 JOLTC_API JoltC_Constraint* JoltC_GearConstraint_Create(
     JoltC_PhysicsSystem* system, JoltC_BodyID b1, JoltC_BodyID b2,
     const JoltC_GearConstraintSettings* s)
@@ -660,11 +807,19 @@ JOLTC_API JoltC_Constraint* JoltC_GearConstraint_Create(
     if (!system || !s) return nullptr;
     JOLTC_TRY_BEGIN
     GearConstraintSettings settings;
-    settings.mSpace = toJphConstraintSpace(s->space);
-    settings.mHingeAxis1 = toJphVec3(s->hingeAxis1);
-    settings.mHingeAxis2 = toJphVec3(s->hingeAxis2);
-    settings.mRatio = s->ratio;
+    fillGear(settings, s);
     return createTwoBody(system, b1, b2, settings);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API JoltC_TwoBodyConstraintSettings* JoltC_GearConstraintSettings_CreateSettings(const JoltC_GearConstraintSettings* s)
+{
+    if (!s) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* settings = new GearConstraintSettings();
+    fillGear(*settings, s);
+    return wrapTwoBodySettings(settings);
     JOLTC_TRY_END
     return nullptr;
 }
@@ -946,25 +1101,53 @@ JOLTC_API void JoltC_SixDOFConstraintSettings_SetLimitedAxis(JoltC_SixDOFConstra
 }
 
 /* ========================================================================== */
-/*  Constraint GetSettings (dummy — returns NULL; the reference has these)    */
-/*  In practice, the settings object lifetime ended after Create().           */
+/*  Constraint GetSettings                                                    */
 /* ========================================================================== */
-/* Note: JPH constraints don't expose a GetSettings() method that returns     */
-/* the original settings object. The reference binding returns NULL for these. */
-/* We provide stubs that return NULL to match the reference API surface.       */
-#define SETTINGS_STUB(Name) \
-    JOLTC_API JoltC_Constraint* JoltC_ ## Name ## _GetSettings(const JoltC_Constraint*) { return nullptr; }
+/* These used to be stubs returning NULL, under a comment claiming JPH constraints do not expose
+ * their settings. That stopped being true: Constraint::GetConstraintSettings() is pure virtual on
+ * the base and every constraint builds a fresh settings object from its live state. The stubs cost
+ * more than nothing -- RagdollSettings_SetPartToParent takes a TwoBodyConstraintSettings*, and with
+ * these returning NULL there was no way to produce one, so ragdolls could not be articulated from C
+ * at all. The caller owns one reference and releases it with TwoBodyConstraintSettings_Release. */
+static JoltC_TwoBodyConstraintSettings* getTwoBodySettings(const JoltC_Constraint* c)
+{
+    if (!c) return nullptr;
+    JOLTC_TRY_BEGIN
+    Ref<ConstraintSettings> settings = asJph(c)->GetConstraintSettings();
+    if (settings == nullptr) return nullptr;
 
-SETTINGS_STUB(PointConstraint)
-SETTINGS_STUB(FixedConstraint)
-SETTINGS_STUB(DistanceConstraint)
-SETTINGS_STUB(HingeConstraint)
-SETTINGS_STUB(SliderConstraint)
-SETTINGS_STUB(ConeConstraint)
-SETTINGS_STUB(SwingTwistConstraint)
-SETTINGS_STUB(SixDOFConstraint)
-SETTINGS_STUB(GearConstraint)
-#undef SETTINGS_STUB
+    /* Every constraint behind these entry points is a two body one, so the downcast holds. The
+     * local Ref lets go on return; the AddRef inside the wrap is the caller's reference. */
+    return wrapTwoBodySettings(static_cast<TwoBodyConstraintSettings*>(settings.GetPtr()));
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+#define SETTINGS_GETTER(Name) \
+    JOLTC_API JoltC_TwoBodyConstraintSettings* JoltC_ ## Name ## _GetSettings(const JoltC_Constraint* c) { return getTwoBodySettings(c); }
+
+SETTINGS_GETTER(PointConstraint)
+SETTINGS_GETTER(FixedConstraint)
+SETTINGS_GETTER(DistanceConstraint)
+SETTINGS_GETTER(HingeConstraint)
+SETTINGS_GETTER(SliderConstraint)
+SETTINGS_GETTER(ConeConstraint)
+SETTINGS_GETTER(SwingTwistConstraint)
+SETTINGS_GETTER(SixDOFConstraint)
+SETTINGS_GETTER(GearConstraint)
+#undef SETTINGS_GETTER
+
+JOLTC_API void JoltC_TwoBodyConstraintSettings_AddRef(JoltC_TwoBodyConstraintSettings* settings)
+{
+    if (!settings) return;
+    reinterpret_cast<TwoBodyConstraintSettings*>(settings)->AddRef();
+}
+
+JOLTC_API void JoltC_TwoBodyConstraintSettings_Release(JoltC_TwoBodyConstraintSettings* settings)
+{
+    if (!settings) return;
+    reinterpret_cast<TwoBodyConstraintSettings*>(settings)->Release();
+}
 
 /* ========================================================================== */
 /*  Constraint-specific TotalLambda / Spring / Motor getters                  */

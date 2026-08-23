@@ -113,4 +113,9 @@ void run_vehicle_live_tests(void);
  * before it, a soft body could be created but never configured or read back. */
 void run_soft_body_tests(void);
 
+/* The phase 0 coverage repairs: honest shape type enums, real constraint GetSettings (which is
+ * what makes ragdolls articulable from C), character simulation with filters, the soft body
+ * contact listener, and query settings that finally connect to a query. */
+void run_phase0_tests(void);
+
 #endif /* TEST_COMMON_H */

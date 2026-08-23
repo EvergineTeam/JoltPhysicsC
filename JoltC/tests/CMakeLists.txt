@@ -41,6 +41,11 @@ add_executable(JoltC_Tests
     # reading simulated vertices back. Before this surface existed the creation handle
     # was a write-only cul-de-sac.
     test_soft_body.c
+
+    # The phase 0 coverage repairs: enum values that match Jolt's, real GetSettings and the
+    # articulated ragdoll they unlock, character filters, the soft body contact listener,
+    # and the query settings structs connected to their queries.
+    test_phase0.c
 )
 
 # The target carries its own public include directory, so nothing here needs to know where

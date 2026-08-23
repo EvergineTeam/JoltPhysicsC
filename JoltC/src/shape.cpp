@@ -1912,10 +1912,11 @@ JOLTC_API void JoltC_CollideShapeSettings_Init(JoltC_CollideShapeSettings* setti
 {
     if (!settings) return;
     CollideShapeSettings defaults;
-    settings->backFaceModeTriangles = JOLTC_BACK_FACE_IGNORE;
-    settings->backFaceModeConvex    = JOLTC_BACK_FACE_IGNORE;
+    settings->backFaceMode          = static_cast<JoltC_BackFaceMode>(defaults.mBackFaceMode);
     settings->maxSeparationDistance = defaults.mMaxSeparationDistance;
     settings->collisionTolerance    = defaults.mCollisionTolerance;
+    settings->penetrationTolerance  = defaults.mPenetrationTolerance;
+    settings->internalEdgeRemovalVertexToleranceSq = defaults.mInternalEdgeRemovalVertexToleranceSq;
 }
 
 JOLTC_API void JoltC_ShapeCastSettings_Init(JoltC_ShapeCastSettings* settings)
@@ -1928,6 +1929,7 @@ JOLTC_API void JoltC_ShapeCastSettings_Init(JoltC_ShapeCastSettings* settings)
     settings->returnDeepestPoint          = defaults.mReturnDeepestPoint ? JOLTC_TRUE : JOLTC_FALSE;
     settings->collisionTolerance          = defaults.mCollisionTolerance;
     settings->penetrationTolerance        = defaults.mPenetrationTolerance;
+    settings->extraConvexRadius           = defaults.mExtraConvexRadius;
 }
 
 /* ========================================================================== */
