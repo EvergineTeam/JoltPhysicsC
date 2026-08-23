@@ -118,4 +118,8 @@ void run_soft_body_tests(void);
  * contact listener, and query settings that finally connect to a query. */
 void run_phase0_tests(void);
 
+/* Phase 1: physics materials end to end (mesh, height field, character ground) and shape
+ * introspection (triangle walk, leaf resolution, submerged volume, runtime terrain deformation). */
+void run_phase1_tests(void);
+
 #endif /* TEST_COMMON_H */

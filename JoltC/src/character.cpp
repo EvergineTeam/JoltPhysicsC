@@ -199,6 +199,7 @@ JOLTC_API JoltC_RVec3 JoltC_CharacterVirtual_GetGroundPosition(const JoltC_Chara
 JOLTC_API JoltC_Vec3 JoltC_CharacterVirtual_GetGroundNormal(const JoltC_CharacterVirtual* c) { JoltC_Vec3 z={0,0,0}; if (!c) return z; JOLTC_TRY_BEGIN return fromJphVec3(cv(c)->GetGroundNormal()); JOLTC_TRY_END return z; }
 JOLTC_API JoltC_Vec3 JoltC_CharacterVirtual_GetGroundVelocity(const JoltC_CharacterVirtual* c) { JoltC_Vec3 z={0,0,0}; if (!c) return z; JOLTC_TRY_BEGIN return fromJphVec3(cv(c)->GetGroundVelocity()); JOLTC_TRY_END return z; }
 JOLTC_API JoltC_BodyID JoltC_CharacterVirtual_GetGroundBodyID(const JoltC_CharacterVirtual* c) { if (!c) return JOLTC_BODY_ID_INVALID; JOLTC_TRY_BEGIN return fromJphBodyID(cv(c)->GetGroundBodyID()); JOLTC_TRY_END return JOLTC_BODY_ID_INVALID; }
+JOLTC_API const JoltC_PhysicsMaterial* JoltC_CharacterVirtual_GetGroundMaterial(const JoltC_CharacterVirtual* c) { if (!c) return nullptr; JOLTC_TRY_BEGIN return fromPhysicsMaterial(cv(c)->GetGroundMaterial()); JOLTC_TRY_END return nullptr; }
 
 JOLTC_API JoltC_Vec3 JoltC_CharacterVirtual_GetUp(const JoltC_CharacterVirtual* c) { JoltC_Vec3 z={0,0,0}; if (!c) return z; JOLTC_TRY_BEGIN return fromJphVec3(cv(c)->GetUp()); JOLTC_TRY_END return z; }
 JOLTC_API void JoltC_CharacterVirtual_SetUp(JoltC_CharacterVirtual* c, JoltC_Vec3 up) { if (!c) return; JOLTC_TRY_BEGIN cv(c)->SetUp(toJphVec3(up)); JOLTC_TRY_END }
@@ -556,6 +557,14 @@ JOLTC_API JoltC_Vec3 JoltC_Character_GetGroundVelocity(const JoltC_Character* c)
 JOLTC_API JoltC_BodyID JoltC_Character_GetGroundBodyID(const JoltC_Character* c) {
     if (!c) return JOLTC_BODY_ID_INVALID;
     return fromJphBodyID(ch(c)->GetGroundBodyID());
+}
+
+JOLTC_API const JoltC_PhysicsMaterial* JoltC_Character_GetGroundMaterial(const JoltC_Character* c) {
+    if (!c) return nullptr;
+    JOLTC_TRY_BEGIN
+    return fromPhysicsMaterial(ch(c)->GetGroundMaterial());
+    JOLTC_TRY_END
+    return nullptr;
 }
 
 JOLTC_API JoltC_Vec3 JoltC_Character_GetUp(const JoltC_Character* c) {

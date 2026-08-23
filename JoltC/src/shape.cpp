@@ -273,6 +273,45 @@ JOLTC_API const JoltC_Shape* JoltC_MeshShape_Create(
     return nullptr;
 }
 
+JOLTC_API const JoltC_Shape* JoltC_MeshShape_Create2(
+    const JoltC_Vec3* vertices, int numVertices,
+    const JoltC_IndexedTriangle* triangles, int numTriangles,
+    JoltC_PhysicsMaterial** materials, int numMaterials)
+{
+    if (!vertices || !triangles || numVertices <= 0 || numTriangles <= 0) return nullptr;
+    JOLTC_TRY_BEGIN
+    VertexList verts;
+    verts.reserve(numVertices);
+    for (int i = 0; i < numVertices; i++) {
+        Float3 f;
+        f.x = vertices[i].x; f.y = vertices[i].y; f.z = vertices[i].z;
+        verts.push_back(f);
+    }
+    IndexedTriangleList tris;
+    tris.reserve(numTriangles);
+    for (int i = 0; i < numTriangles; i++) {
+        IndexedTriangle t(triangles[i].i1, triangles[i].i2, triangles[i].i3, triangles[i].materialIndex);
+        tris.push_back(t);
+    }
+    MeshShapeSettings settings(std::move(verts), std::move(tris));
+    if (materials && numMaterials > 0) {
+        settings.mMaterials.reserve(numMaterials);
+        for (int i = 0; i < numMaterials; i++) {
+            settings.mMaterials.push_back(asPhysicsMaterial(materials[i]));
+        }
+    }
+    auto result = settings.Create();
+    if (result.HasError()) {
+        joltc_set_last_error(result.GetError().c_str());
+        return nullptr;
+    }
+    const Shape* s = result.Get().GetPtr();
+    s->AddRef();
+    return fromShape(s);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  HeightField shape                                                         */
 /* -------------------------------------------------------------------------- */
@@ -282,6 +321,33 @@ JOLTC_API const JoltC_Shape* JoltC_HeightFieldShape_Create(
     if (!samples || sampleCount < 2) return nullptr;
     JOLTC_TRY_BEGIN
     HeightFieldShapeSettings settings(samples, toJphVec3(offset), toJphVec3(scale), sampleCount);
+    auto result = settings.Create();
+    if (result.HasError()) {
+        joltc_set_last_error(result.GetError().c_str());
+        return nullptr;
+    }
+    const Shape* s = result.Get().GetPtr();
+    s->AddRef();
+    return fromShape(s);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API const JoltC_Shape* JoltC_HeightFieldShape_Create2(
+    const float* samples, JoltC_Vec3 offset, JoltC_Vec3 scale, uint32_t sampleCount,
+    const uint8_t* materialIndices, JoltC_PhysicsMaterial** materials, int numMaterials)
+{
+    if (!samples || sampleCount < 2) return nullptr;
+    JOLTC_TRY_BEGIN
+    HeightFieldShapeSettings settings(samples, toJphVec3(offset), toJphVec3(scale), sampleCount);
+    if (materialIndices && materials && numMaterials > 0) {
+        uint32_t cells = (sampleCount - 1) * (sampleCount - 1);
+        settings.mMaterialIndices.assign(materialIndices, materialIndices + cells);
+        settings.mMaterials.reserve(numMaterials);
+        for (int i = 0; i < numMaterials; i++) {
+            settings.mMaterials.push_back(asPhysicsMaterial(materials[i]));
+        }
+    }
     auto result = settings.Create();
     if (result.HasError()) {
         joltc_set_last_error(result.GetError().c_str());
@@ -477,6 +543,111 @@ JOLTC_API uint64_t JoltC_Shape_GetUserData(const JoltC_Shape* shape)
     return asShape(shape)->GetUserData();
     JOLTC_TRY_END
     return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Shape introspection                                                       */
+/* -------------------------------------------------------------------------- */
+JOLTC_API const JoltC_PhysicsMaterial* JoltC_Shape_GetMaterial(const JoltC_Shape* shape, uint32_t subShapeId)
+{
+    if (!shape) return nullptr;
+    JOLTC_TRY_BEGIN
+    SubShapeID sid;
+    sid.SetValue(subShapeId);
+    return fromPhysicsMaterial(asShape(shape)->GetMaterial(sid));
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API uint64_t JoltC_Shape_GetSubShapeUserData(const JoltC_Shape* shape, uint32_t subShapeId)
+{
+    if (!shape) return 0;
+    JOLTC_TRY_BEGIN
+    SubShapeID sid;
+    sid.SetValue(subShapeId);
+    return asShape(shape)->GetSubShapeUserData(sid);
+    JOLTC_TRY_END
+    return 0;
+}
+
+JOLTC_API const JoltC_Shape* JoltC_Shape_GetLeafShape(const JoltC_Shape* shape, uint32_t subShapeId, uint32_t* outRemainder)
+{
+    if (!shape) return nullptr;
+    JOLTC_TRY_BEGIN
+    SubShapeID sid;
+    sid.SetValue(subShapeId);
+    SubShapeID remainder;
+    const Shape* leaf = asShape(shape)->GetLeafShape(sid, remainder);
+    if (outRemainder) *outRemainder = remainder.GetValue();
+    return fromShape(leaf);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API void JoltC_Shape_GetSubmergedVolume(
+    const JoltC_Shape* shape,
+    const JoltC_Mat44* centerOfMassTransform,
+    JoltC_Vec3 scale,
+    JoltC_Vec3 surfaceNormal,
+    float surfaceConstant,
+    float* outTotalVolume,
+    float* outSubmergedVolume,
+    JoltC_Vec3* outCenterOfBuoyancy)
+{
+    if (!shape || !centerOfMassTransform) return;
+    JOLTC_TRY_BEGIN
+    float total = 0.0f, submerged = 0.0f;
+    Vec3 buoyancy = Vec3::sZero();
+    Plane surface(toJphVec3(surfaceNormal), surfaceConstant);
+    asShape(shape)->GetSubmergedVolume(
+        toJphMat44(*centerOfMassTransform), toJphVec3(scale), surface,
+        total, submerged, buoyancy
+        JPH_IF_DEBUG_RENDERER(, RVec3::sZero()));
+    if (outTotalVolume) *outTotalVolume = total;
+    if (outSubmergedVolume) *outSubmergedVolume = submerged;
+    if (outCenterOfBuoyancy) *outCenterOfBuoyancy = fromJphVec3(buoyancy);
+    JOLTC_TRY_END
+}
+
+JOLTC_API JoltC_GetTrianglesContext* JoltC_Shape_GetTrianglesStart(
+    const JoltC_Shape* shape,
+    JoltC_Vec3 boxMin, JoltC_Vec3 boxMax,
+    JoltC_Vec3 positionCOM, JoltC_Quat rotation, JoltC_Vec3 scale)
+{
+    if (!shape) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* context = new Shape::GetTrianglesContext;
+    AABox box(toJphVec3(boxMin), toJphVec3(boxMax));
+    asShape(shape)->GetTrianglesStart(*context, box, toJphVec3(positionCOM), toJphQuat(rotation), toJphVec3(scale));
+    return reinterpret_cast<JoltC_GetTrianglesContext*>(context);
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API int JoltC_Shape_GetTrianglesNext(
+    const JoltC_Shape* shape,
+    JoltC_GetTrianglesContext* context,
+    int maxTriangles,
+    float* outVertices,
+    const JoltC_PhysicsMaterial** outMaterials)
+{
+    if (!shape || !context || !outVertices) return -1;
+    if (maxTriangles < Shape::cGetTrianglesMinTrianglesRequested) return -1;
+    JOLTC_TRY_BEGIN
+    /* Float3 is three tightly packed floats, so the caller's float buffer is the same layout. */
+    static_assert(sizeof(Float3) == 3 * sizeof(float), "Float3 must be tightly packed");
+    return asShape(shape)->GetTrianglesNext(
+        *reinterpret_cast<Shape::GetTrianglesContext*>(context),
+        maxTriangles,
+        reinterpret_cast<Float3*>(outVertices),
+        reinterpret_cast<const PhysicsMaterial**>(outMaterials));
+    JOLTC_TRY_END
+    return -1;
+}
+
+JOLTC_API void JoltC_GetTrianglesContext_Destroy(JoltC_GetTrianglesContext* context)
+{
+    delete reinterpret_cast<Shape::GetTrianglesContext*>(context);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1762,6 +1933,84 @@ JOLTC_API int JoltC_HeightFieldShape_ProjectOntoSurface(const JoltC_Shape* shape
     return ok ? 1 : 0;
     JOLTC_TRY_END
     return 0;
+}
+
+/* ========================================================================== */
+/*  HeightFieldShape — materials and runtime deformation                      */
+/* ========================================================================== */
+JOLTC_API const JoltC_PhysicsMaterial* JoltC_HeightFieldShape_GetMaterial(const JoltC_Shape* shape, uint32_t x, uint32_t y)
+{
+    if (!shape) return nullptr;
+    JOLTC_TRY_BEGIN
+    auto* hf = static_cast<const HeightFieldShape*>(asShape(shape));
+    return fromPhysicsMaterial(hf->GetMaterial(x, y));
+    JOLTC_TRY_END
+    return nullptr;
+}
+
+JOLTC_API void JoltC_HeightFieldShape_GetHeights(
+    const JoltC_Shape* shape,
+    uint32_t x, uint32_t y, uint32_t sizeX, uint32_t sizeY,
+    float* outHeights, int64_t heightsStride)
+{
+    if (!shape || !outHeights) return;
+    JOLTC_TRY_BEGIN
+    auto* hf = static_cast<const HeightFieldShape*>(asShape(shape));
+    hf->GetHeights(x, y, sizeX, sizeY, outHeights, static_cast<intptr_t>(heightsStride));
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_HeightFieldShape_SetHeights(
+    const JoltC_Shape* shape,
+    uint32_t x, uint32_t y, uint32_t sizeX, uint32_t sizeY,
+    const float* heights, int64_t heightsStride,
+    JoltC_TempAllocator* allocator,
+    float activeEdgeCosThresholdAngle)
+{
+    if (!shape || !heights || !allocator) return;
+    JOLTC_TRY_BEGIN
+    /* Deformation mutates the shape, which the JoltC_Shape handle exposes as const the way every
+     * other shape handle is; the caller owns the synchronization, exactly as with Jolt itself. */
+    auto* hf = const_cast<HeightFieldShape*>(static_cast<const HeightFieldShape*>(asShape(shape)));
+    hf->SetHeights(x, y, sizeX, sizeY, heights, static_cast<intptr_t>(heightsStride), *allocator->ptr, activeEdgeCosThresholdAngle);
+    JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_HeightFieldShape_GetMaterials(
+    const JoltC_Shape* shape,
+    uint32_t x, uint32_t y, uint32_t sizeX, uint32_t sizeY,
+    uint8_t* outMaterials, int64_t materialsStride)
+{
+    if (!shape || !outMaterials) return;
+    JOLTC_TRY_BEGIN
+    auto* hf = static_cast<const HeightFieldShape*>(asShape(shape));
+    hf->GetMaterials(x, y, sizeX, sizeY, outMaterials, static_cast<intptr_t>(materialsStride));
+    JOLTC_TRY_END
+}
+
+JOLTC_API JoltC_Bool JoltC_HeightFieldShape_SetMaterials(
+    const JoltC_Shape* shape,
+    uint32_t x, uint32_t y, uint32_t sizeX, uint32_t sizeY,
+    const uint8_t* materials, int64_t materialsStride,
+    JoltC_PhysicsMaterial** materialList, int numMaterials,
+    JoltC_TempAllocator* allocator)
+{
+    if (!shape || !materials || !allocator) return JOLTC_FALSE;
+    JOLTC_TRY_BEGIN
+    auto* hf = const_cast<HeightFieldShape*>(static_cast<const HeightFieldShape*>(asShape(shape)));
+    PhysicsMaterialList list;
+    PhysicsMaterialList* listPtr = nullptr;
+    if (materialList && numMaterials > 0) {
+        list.reserve(numMaterials);
+        for (int i = 0; i < numMaterials; i++) {
+            list.push_back(asPhysicsMaterial(materialList[i]));
+        }
+        listPtr = &list;
+    }
+    bool ok = hf->SetMaterials(x, y, sizeX, sizeY, materials, static_cast<intptr_t>(materialsStride), listPtr, *allocator->ptr);
+    return ok ? JOLTC_TRUE : JOLTC_FALSE;
+    JOLTC_TRY_END
+    return JOLTC_FALSE;
 }
 
 /* ========================================================================== */

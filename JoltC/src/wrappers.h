@@ -420,6 +420,12 @@ struct JoltC_PhysicsStepListener {
 
 /* -------------------------------------------------------------------------- */
 /*  PhysicsMaterial — custom subclass that stores name + color                */
+/*                                                                            */
+/*  JoltC_PhysicsMaterial* is a reinterpret_cast of PhysicsMaterial*, the     */
+/*  same raw ref-counted pattern as JoltC_Shape. That way the material a      */
+/*  shape or a character hands back through GetMaterial IS the handle the     */
+/*  caller created it with: identity comparison works, and the default        */
+/*  material (which is not a PhysicsMaterialImpl) travels the same road.      */
 /* -------------------------------------------------------------------------- */
 class PhysicsMaterialImpl final : public PhysicsMaterial {
 public:
@@ -428,9 +434,14 @@ public:
     const char* GetDebugName() const override { return name.c_str(); }
     Color GetDebugColor() const override { return color; }
 };
-struct JoltC_PhysicsMaterial {
-    Ref<PhysicsMaterialImpl> ptr;
-};
+
+inline const PhysicsMaterial* asPhysicsMaterial(const JoltC_PhysicsMaterial* m) {
+    return reinterpret_cast<const PhysicsMaterial*>(m);
+}
+
+inline const JoltC_PhysicsMaterial* fromPhysicsMaterial(const PhysicsMaterial* m) {
+    return reinterpret_cast<const JoltC_PhysicsMaterial*>(m);
+}
 
 /* -------------------------------------------------------------------------- */
 /*  GroupFilter — ref-counted, wraps GroupFilter*                             */

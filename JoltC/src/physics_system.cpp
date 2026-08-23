@@ -611,32 +611,39 @@ JOLTC_API JoltC_Bool JoltC_GroupFilterTable_IsCollisionEnabled(const JoltC_Group
 JOLTC_API JoltC_PhysicsMaterial* JoltC_PhysicsMaterial_Create(const char* name, uint32_t color)
 {
     JOLTC_TRY_BEGIN
-    auto* w = new JoltC_PhysicsMaterial;
     auto* m = new PhysicsMaterialImpl;
     m->name = name ? name : "";
     m->color = Color(color);
     m->AddRef();
-    w->ptr = m;
-    return w;
+    return reinterpret_cast<JoltC_PhysicsMaterial*>(static_cast<PhysicsMaterial*>(m));
     JOLTC_TRY_END
     return nullptr;
 }
 
 JOLTC_API void JoltC_PhysicsMaterial_Destroy(JoltC_PhysicsMaterial* material)
 {
-    delete material;
+    if (!material) return;
+    JOLTC_TRY_BEGIN
+    const_cast<PhysicsMaterial*>(asPhysicsMaterial(material))->Release();
+    JOLTC_TRY_END
 }
 
 JOLTC_API const char* JoltC_PhysicsMaterial_GetDebugName(const JoltC_PhysicsMaterial* material)
 {
     if (!material) return "";
-    return material->ptr->GetDebugName();
+    JOLTC_TRY_BEGIN
+    return asPhysicsMaterial(material)->GetDebugName();
+    JOLTC_TRY_END
+    return "";
 }
 
 JOLTC_API uint32_t JoltC_PhysicsMaterial_GetDebugColor(const JoltC_PhysicsMaterial* material)
 {
     if (!material) return 0;
-    return material->ptr->GetDebugColor().GetUInt32();
+    JOLTC_TRY_BEGIN
+    return asPhysicsMaterial(material)->GetDebugColor().GetUInt32();
+    JOLTC_TRY_END
+    return 0;
 }
 
 /* -------------------------------------------------------------------------- */

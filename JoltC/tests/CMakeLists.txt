@@ -46,6 +46,11 @@ add_executable(JoltC_Tests
     # articulated ragdoll they unlock, character filters, the soft body contact listener,
     # and the query settings structs connected to their queries.
     test_phase0.c
+
+    # Phase 1: physics materials wired end to end (mesh, height field, character ground)
+    # and shape introspection: the triangle walk, leaf resolution, submerged volume and
+    # runtime terrain deformation.
+    test_phase1.c
 )
 
 # The target carries its own public include directory, so nothing here needs to know where

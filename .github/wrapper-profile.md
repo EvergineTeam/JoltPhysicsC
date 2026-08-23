@@ -121,22 +121,25 @@ fixed, but a new string macro is worth a thought.
 An audit against Jolt 5.6 (2026-08) found the wrapper short of its "exhaustive" contract in a
 number of places. Phase 0 (enum values matching Jolt's, real GetSettings and the ragdoll
 articulation they unlock, CharacterVirtual filters, the soft body contact listener and manifold,
-query settings connected to their queries, per-system broad phase query handles) is done. Still
+query settings connected to their queries, per-system broad phase query handles) is done.
+Phase 1 is done too: physics materials run end to end (`MeshShape_Create2` and
+`HeightFieldShape_Create2` take material lists, `Shape_GetMaterial` and the character
+`GetGroundMaterial` hand them back, and `JoltC_PhysicsMaterial*` became the same raw
+ref-counted cast as `JoltC_Shape*` so identity comparison works), plus shape introspection:
+the `GetTrianglesStart/Next` walk, `GetLeafShape`, `GetSubShapeUserData`, `GetSubmergedVolume`,
+and height field runtime deformation (`Get/SetHeights`, `Get/SetMaterials` per cell). Still
 open, in planned order:
 
-1. Physics materials end to end (`Shape::GetMaterial`, mesh/height field material lists,
-   `GetGroundMaterial`) and shape introspection (`GetTrianglesStart/Next`, height field
-   `Get/SetHeights`).
-2. Soft bodies: per-vertex attributes in `CreateConstraints` (today one attribute is broadcast
+1. Soft bodies: per-vertex attributes in `CreateConstraints` (today one attribute is broadcast
    and LRA constraints can never be created), skinning, Cosserat rods, vertex write access.
-3. Determinism: `StateRecorder`, `PhysicsSystem::SaveState/RestoreState` and the per-object
+2. Determinism: `StateRecorder`, `PhysicsSystem::SaveState/RestoreState` and the per-object
    SaveState family.
-4. Constraints and vehicles: `PathConstraint` (its enum value exists and nothing else does),
+3. Constraints and vehicles: `PathConstraint` (its enum value exists and nothing else does),
    Pulley runtime accessors, vehicle step callbacks and the WheelWV slip fields.
-5. Character: the eight missing `CharacterContactListener` callbacks with the full
+4. Character: the eight missing `CharacterContactListener` callbacks with the full
    `CharacterContact` payload, custom character-vs-character procs, `mSupportingVolume`;
    `MotionProperties` completion; collectors with early-out.
-6. `DebugRenderer` through C procs.
+5. `DebugRenderer` through C procs.
 
 Deliberately out of scope unless asked for: hair simulation, the compute shader interface, and
 `ObjectStream` serialization.
