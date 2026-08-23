@@ -1,4 +1,4 @@
-/* JoltC Test Suite — the phase 0 repairs: honest enums, real constraint settings, an articulated
+/* JoltC Test Suite -- the phase 0 repairs: honest enums, real constraint settings, an articulated
  * ragdoll, filtered characters, soft body contact callbacks, and query settings that connect.
  * SPDX-License-Identifier: MIT
  *

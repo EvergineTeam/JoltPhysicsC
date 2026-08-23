@@ -1,4 +1,4 @@
-/* JoltC Test Suite — live soft bodies: build shared settings, create, step, read, destroy.
+/* JoltC Test Suite -- live soft bodies: build shared settings, create, step, read, destroy.
  * SPDX-License-Identifier: MIT
  *
  * Until now JoltC_SoftBodyCreationSettings could be created but never configured, so no

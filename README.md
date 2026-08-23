@@ -1,6 +1,6 @@
 # JoltPhysicsC
 
-C bindings for [Jolt Physics](https://github.com/jrouwe/JoltPhysics) — a fast, modern 3D physics engine.
+C bindings for [Jolt Physics](https://github.com/jrouwe/JoltPhysics) -- a fast, modern 3D physics engine.
 
 JoltPhysicsC wraps the Jolt Physics C++ API into a flat C API exposed as a shared or static library. It is primarily designed to be consumed by [JoltPhysics.NET](https://github.com/EvergineTeam/JoltPhysics.NET), the C# binding used in [Evergine](https://evergine.com).
 

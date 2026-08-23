@@ -1,4 +1,4 @@
-/* JoltC Test Suite — entry point and test runner
+/* JoltC Test Suite -- entry point and test runner
  * SPDX-License-Identifier: MIT
  */
 

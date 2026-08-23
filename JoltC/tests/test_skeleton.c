@@ -1,4 +1,4 @@
-/* JoltC Test Suite — skeleton.h API tests (Skeleton, SkeletonPose, SkeletalAnimation)
+/* JoltC Test Suite -- skeleton.h API tests (Skeleton, SkeletonPose, SkeletalAnimation)
  * SPDX-License-Identifier: MIT
  */
 

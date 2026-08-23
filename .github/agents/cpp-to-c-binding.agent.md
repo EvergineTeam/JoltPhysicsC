@@ -23,7 +23,7 @@ You are an expert at creating **plain C API wrapper libraries** that expose C++ 
 
 - **Wrap ALL public methods** of every class, including getters, setters, static methods, and overloads (expose overloads as `_Create`, `_Create2`, `_Create3` etc.)
 - **Wrap ALL enums** with their full set of values, using a library prefix
-- **Wrap ALL structs** — blittable PODs as C structs, complex objects as opaque handles
+- **Wrap ALL structs** -- blittable PODs as C structs, complex objects as opaque handles
 - **Wrap ALL callback/listener interfaces** using function-pointer + `void* userData` patterns
 - **Wrap ALL settings/config structs** with `_Init` functions that populate default values
 - **Use a reference binding** (e.g., amerkoleci/joltc for JoltPhysics) when available to determine the target API surface, and perform gap analysis with `dumpbin /EXPORTS` to track coverage percentage
@@ -40,9 +40,9 @@ Every C wrapper library you produce follows this layered structure:
 - One umbrella header (`<libname>-api.h`) that includes all public headers
 
 ### Internal Headers (`src/`)
-- `errors_internal.h` — Thread-local error state + CESIUM_TRY_BEGIN/END macros
-- `internal.h` — Type conversion helpers (C structs ↔ C++ types like glm)
-- `wrappers.h` — ALL internal wrapper structs in ONE file (prevents ODR violations)
+- `errors_internal.h` -- Thread-local error state + CESIUM_TRY_BEGIN/END macros
+- `internal.h` -- Type conversion helpers (C structs ↔ C++ types like glm)
+- `wrappers.h` -- ALL internal wrapper structs in ONE file (prevents ODR violations)
 
 ### Implementation Files (`src/`)
 - One `.cpp` per public header / domain module
@@ -62,7 +62,7 @@ MYLIB_API void mylib_handle_destroy(MyHandle* handle);
 ```
 
 ```cpp
-// Internal wrapper (in wrappers.h — ONE definition, no duplicates)
+// Internal wrapper (in wrappers.h -- ONE definition, no duplicates)
 struct HandleWrapper {
     std::unique_ptr<CppClass> ptr;
 };
@@ -153,9 +153,9 @@ typedef enum MyLoadState {
 ```
 
 ### 7. Lifetime / Ownership Rules
-- `_create` / `_destroy` pairs — caller owns the handle
+- `_create` / `_destroy` pairs -- caller owns the handle
 - Document when handles borrow references (e.g., "keep X alive while Y exists")
-- Returned `const` pointers are borrowed — caller must NOT free them
+- Returned `const` pointers are borrowed -- caller must NOT free them
 - String returns are valid until the next API call on the same thread (thread-local storage)
 
 ### 8. Collections
@@ -225,13 +225,13 @@ MYLIB_API const MyShape* mylib_shape_create(...) {
 When creating a new C wrapper for a C++ library:
 
 1. **Explore** the C++ library's public API surface (headers, namespaces, key classes)
-2. **Plan** header decomposition — one C header per logical domain/module
-3. **Create `common.h`** — export macro, error API, blittable value types
-4. **Create internal headers** — error macros, type converters, wrappers (ONE file for all wrapper structs)
+2. **Plan** header decomposition -- one C header per logical domain/module
+3. **Create `common.h`** -- export macro, error API, blittable value types
+4. **Create internal headers** -- error macros, type converters, wrappers (ONE file for all wrapper structs)
 5. **Implement** one `.cpp` per domain, following the patterns above
-6. **Write CMakeLists.txt** — SHARED library target, link C++ static libs, set `POSITION_INDEPENDENT_CODE`, `CXX_VISIBILITY_PRESET hidden`
-7. **Write tests** — one test file covering all public functions, null safety, round-trip conversions
-8. **Build and verify** — compile, run tests, check for linker errors
+6. **Write CMakeLists.txt** -- SHARED library target, link C++ static libs, set `POSITION_INDEPENDENT_CODE`, `CXX_VISIBILITY_PRESET hidden`
+7. **Write tests** -- one test file covering all public functions, null safety, round-trip conversions
+8. **Build and verify** -- compile, run tests, check for linker errors
 
 ## CMake Pattern
 
@@ -255,14 +255,14 @@ target_link_libraries(MyLibC PRIVATE CppLib::StaticTargets...)
 - **NEVER** expose C++ types (classes, templates, STL containers) in public headers
 - **NEVER** use `#include` of C++ headers in public headers
 - **NEVER** duplicate wrapper struct definitions across translation units (ODR violations)
-- **NEVER** use `const_cast` to mutate through a const pointer — use `mutable` fields instead
+- **NEVER** use `const_cast` to mutate through a const pointer -- use `mutable` fields instead
 - **ALWAYS** wrap all `extern "C"` function bodies in TRY_BEGIN/TRY_END
 - **ALWAYS** check for null handles before the try block
 - **ALWAYS** use `extern "C"` linkage in implementation files
 - **ALWAYS** prefix all public symbols with a consistent library prefix to avoid collisions
 - **ALWAYS** store callbacks in single-slot wrapper fields (not as captured lambda values) so they can be updated or cleared
 - **ALWAYS** return identity/zero/default values on error paths, never leave output uninitialized
-- Public headers must compile as pure C (C11) — no C++ constructs
+- Public headers must compile as pure C (C11) -- no C++ constructs
 - Use `int` for boolean returns (0 = false, 1 = true)
 - Use `int32_t`/`int64_t`/`uint32_t` for sized integers, not platform-dependent types
 
@@ -271,12 +271,12 @@ target_link_libraries(MyLibC PRIVATE CppLib::StaticTargets...)
 These are recurring pitfalls discovered during real binding work:
 
 ### C++ API differences from expectations
-- Some C++ classes expose mutable references instead of setters (e.g., `GetMotorSettings()` returns `MotorSettings&` — assign via `GetMotorSettings() = ms;` instead of expecting `SetMotorSettings()`)
+- Some C++ classes expose mutable references instead of setters (e.g., `GetMotorSettings()` returns `MotorSettings&` -- assign via `GetMotorSettings() = ms;` instead of expecting `SetMotorSettings()`)
 - `Vector<2>` in some libraries uses `.mF32[0]`/`.mF32[1]` not `GetX()`/`GetY()`
 - C++ method names may differ from what you'd guess: always check the actual header (e.g., `GetJoints()` not `GetJointStates()`, `UnregisterTypes()` not `UnRegisterTypes()`)
 
 ### Version pinning
-- When targeting a specific C++ library version (e.g., via git submodule tag), verify that all fields/methods you reference actually exist in that version — features may be added in patch releases
+- When targeting a specific C++ library version (e.g., via git submodule tag), verify that all fields/methods you reference actually exist in that version -- features may be added in patch releases
 - Guard version-specific fields with `#if` checks or simply omit them if targeting an older stable release
 
 ### Name aliasing for FFI compatibility
@@ -284,5 +284,5 @@ These are recurring pitfalls discovered during real binding work:
 
 ### Cross-platform CMake
 - Use `if(NOT DEFINED VAR) set(VAR default) endif()` for paths like `PHYSICS_REPO_ROOT` so CI can override them
-- The CMakeLists.txt should work on Windows, Linux, and macOS without platform-specific code — platform selection is done at configure time via toolchain flags
+- The CMakeLists.txt should work on Windows, Linux, and macOS without platform-specific code -- platform selection is done at configure time via toolchain flags
 - For GitHub Actions: use separate `git submodule update --init --recursive` instead of `actions/checkout` with `submodules: recursive` (avoids auth/token failures on Windows runners)

@@ -340,14 +340,14 @@ JOLTC_API uint32_t JoltC_PhysicsSystem_GetMaxBodies(const JoltC_PhysicsSystem* s
 /* -------------------------------------------------------------------------- */
 
 /* We keep two static BodyInterface wrappers per PhysicsSystem to avoid allocation.
-   Since they're non-owning, we store them as statics in thread-safe manner —
+   Since they're non-owning, we store them as statics in thread-safe manner --
    actually we just allocate them on the heap per call since they cost very little. */
 
 JOLTC_API JoltC_BodyInterface* JoltC_PhysicsSystem_GetBodyInterface(JoltC_PhysicsSystem* system)
 {
     if (!system) return nullptr;
     JOLTC_TRY_BEGIN
-    /* Return a thin wrapper. Caller must NOT destroy this — it lives as long as system. */
+    /* Return a thin wrapper. Caller must NOT destroy this -- it lives as long as system. */
     static thread_local JoltC_BodyInterface wrapper;
     wrapper.ptr = &system->ptr->GetBodyInterface();
     wrapper.system = system->ptr.get();
@@ -721,7 +721,7 @@ JOLTC_API JoltC_ContactListener* JoltC_ContactListener_CreateEnhanced(
 }
 
 /* -------------------------------------------------------------------------- */
-/*  PhysicsSystem — constraints                                               */
+/*  PhysicsSystem - constraints                                               */
 /* -------------------------------------------------------------------------- */
 JOLTC_API void JoltC_PhysicsSystem_AddConstraints(JoltC_PhysicsSystem* system, JoltC_Constraint** constraints, int count)
 {
@@ -763,7 +763,7 @@ JOLTC_API int JoltC_PhysicsSystem_GetConstraints(const JoltC_PhysicsSystem* syst
 }
 
 /* -------------------------------------------------------------------------- */
-/*  PhysicsSystem — settings                                                  */
+/*  PhysicsSystem - settings                                                  */
 /* -------------------------------------------------------------------------- */
 static JoltC_PhysicsSettings fromJphPhysicsSettings(const PhysicsSettings& s) {
     JoltC_PhysicsSettings r;
@@ -844,7 +844,7 @@ JOLTC_API void JoltC_PhysicsSystem_SetPhysicsSettings(JoltC_PhysicsSystem* syste
 }
 
 /* -------------------------------------------------------------------------- */
-/*  PhysicsSystem — activate bodies in AABB                                   */
+/*  PhysicsSystem - activate bodies in AABB                                   */
 /* -------------------------------------------------------------------------- */
 JOLTC_API void JoltC_PhysicsSystem_ActivateBodiesInAABox(JoltC_PhysicsSystem* system, JoltC_Vec3 min, JoltC_Vec3 max)
 {

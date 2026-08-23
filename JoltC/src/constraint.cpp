@@ -997,7 +997,7 @@ JOLTC_API float JoltC_RackAndPinionConstraint_GetTotalLambda(const JoltC_Constra
 }
 
 /* ========================================================================== */
-/*  Constraint base — additional                                              */
+/*  Constraint base - additional                                              */
 /* ========================================================================== */
 JOLTC_API void JoltC_Constraint_Destroy(JoltC_Constraint* c) {
     if (!c) return;
@@ -1549,7 +1549,7 @@ JOLTC_API JoltC_Vec3 JoltC_SixDOFConstraint_GetTotalLambdaMotorRotation(const Jo
 }
 
 /* ========================================================================== */
-/*  PathConstraintPath — ref-counted raw handle, like shapes                  */
+/*  PathConstraintPath - ref-counted raw handle, like shapes                  */
 /* ========================================================================== */
 /* Two names rather than an overload: this section lives inside the extern "C" block, where
  * overloading is not a thing. */

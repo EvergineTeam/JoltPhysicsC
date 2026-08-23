@@ -1,4 +1,4 @@
-/* JoltC Test Suite — phase 6: the debug renderer.
+/* JoltC Test Suite -- phase 6: the debug renderer.
  * SPDX-License-Identifier: MIT
  *
  * Jolt draws what the solver actually holds and reduces it to lines, triangles and text through

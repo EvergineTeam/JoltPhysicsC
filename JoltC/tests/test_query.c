@@ -1,10 +1,10 @@
-/* JoltC Test Suite — query.h API tests (raycasting, broad/narrow phase)
+/* JoltC Test Suite -- query.h API tests (raycasting, broad/narrow phase)
  * SPDX-License-Identifier: MIT
  */
 
 #include "test_common.h"
 
-/* Broadphase callback — increments a counter */
+/* Broadphase callback -- increments a counter */
 static void bp_collide_sphere_callback(void* userData, JoltC_BodyID bodyID)
 {
     (void)bodyID;

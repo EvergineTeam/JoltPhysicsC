@@ -1,4 +1,4 @@
-/* JoltC Test Suite — constraint.h API tests
+/* JoltC Test Suite -- constraint.h API tests
  * SPDX-License-Identifier: MIT
  */
 

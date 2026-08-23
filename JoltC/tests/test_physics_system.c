@@ -1,4 +1,4 @@
-/* JoltC Test Suite — physics_system.h API tests
+/* JoltC Test Suite -- physics_system.h API tests
  * SPDX-License-Identifier: MIT
  */
 

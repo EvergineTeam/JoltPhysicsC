@@ -1,11 +1,11 @@
-/* JoltC Test Suite — body_access.h API tests (direct Body access, BodyLock,
+/* JoltC Test Suite -- body_access.h API tests (direct Body access, BodyLock,
  *                    MotionProperties)
  * SPDX-License-Identifier: MIT
  *
  * body_access.h is the widest module in the wrapper and had no test at all, so a
  * hand repair after a JoltPhysics bump could swap two float arguments or read the
  * wrong member and still compile. Almost every assertion below is therefore a
- * round-trip — write a distinctive, asymmetric value, read it back — or a
+ * round-trip -- write a distinctive, asymmetric value, read it back -- or a
  * structural invariant. Nothing here asserts a position or a velocity that the
  * solver decides, so a new friction model or a different iteration order upstream
  * cannot make this file fail; only a wrapper that lost an argument, an order, or a
@@ -30,7 +30,7 @@ static const JoltC_BodyLockInterface* body_lock_iface(TestPhysicsContext* ctx)
 }
 
 /* Takes a write lock on one body. The caller destroys *outLock before touching
- * the BodyInterface again — the interface takes the same mutexes. */
+ * the BodyInterface again -- the interface takes the same mutexes. */
 static JoltC_Body* lock_body_for_write(TestPhysicsContext* ctx, JoltC_BodyID id,
                                        JoltC_BodyLockWrite** outLock)
 {
@@ -203,7 +203,7 @@ static void test_lock_multi_preserves_order(void)
 }
 
 /* ========================================================================== */
-/*  Body — identity and classification                                        */
+/*  Body - identity and classification                                        */
 /* ========================================================================== */
 
 static void test_body_classification_dynamic(void)
@@ -303,7 +303,7 @@ static void test_body_classification_static(void)
 }
 
 /* ========================================================================== */
-/*  Body — flag and scalar round-trips                                        */
+/*  Body - flag and scalar round-trips                                        */
 /* ========================================================================== */
 
 static void test_body_flag_roundtrips(void)
@@ -496,7 +496,7 @@ static void test_body_scalar_roundtrips(void)
 }
 
 /* ========================================================================== */
-/*  Body — velocities                                                         */
+/*  Body - velocities                                                         */
 /* ========================================================================== */
 
 static void test_body_velocity_roundtrips(void)
@@ -627,7 +627,7 @@ static void test_body_point_velocity(void)
 }
 
 /* ========================================================================== */
-/*  Body — forces, torques, impulses                                          */
+/*  Body - forces, torques, impulses                                          */
 /* ========================================================================== */
 
 static void test_body_force_and_torque(void)
@@ -860,7 +860,7 @@ static void test_body_buoyancy_impulse(void)
 }
 
 /* ========================================================================== */
-/*  Body — transforms and bounds                                              */
+/*  Body - transforms and bounds                                              */
 /* ========================================================================== */
 
 static void test_body_transforms(void)
@@ -1075,7 +1075,7 @@ static void test_motion_properties_inertia(void)
 }
 
 /* ========================================================================== */
-/*  Null safety — every entry point is documented as guarded                   */
+/*  Null safety - every entry point is documented as guarded                   */
 /* ========================================================================== */
 
 static void test_body_null_safety(void)

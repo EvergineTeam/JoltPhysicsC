@@ -1,4 +1,4 @@
-/* JoltC Test Suite — shared test infrastructure
+/* JoltC Test Suite -- shared test infrastructure
  * SPDX-License-Identifier: MIT
  */
 

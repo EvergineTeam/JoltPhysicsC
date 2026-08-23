@@ -64,7 +64,7 @@ struct JoltC_JobSystem {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  BroadPhaseQuery — non-owning, obtained from PhysicsSystem                */
+/*  BroadPhaseQuery - non-owning, obtained from PhysicsSystem                */
 /* -------------------------------------------------------------------------- */
 struct JoltC_BroadPhaseQuery {
     const BroadPhaseQuery* ptr;
@@ -82,7 +82,7 @@ struct JoltC_PhysicsSystem {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  BodyInterface — thin wrapper, non-owning pointer                          */
+/*  BodyInterface - thin wrapper, non-owning pointer                          */
 /* -------------------------------------------------------------------------- */
 struct JoltC_BodyInterface {
     BodyInterface* ptr;
@@ -90,7 +90,7 @@ struct JoltC_BodyInterface {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  BroadPhaseLayerInterface — callback-based implementation                  */
+/*  BroadPhaseLayerInterface - callback-based implementation                  */
 /* -------------------------------------------------------------------------- */
 class BroadPhaseLayerInterfaceCallback final : public BroadPhaseLayerInterface {
 public:
@@ -118,7 +118,7 @@ struct JoltC_BroadPhaseLayerInterface {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  ObjectVsBroadPhaseLayerFilter — callback-based                            */
+/*  ObjectVsBroadPhaseLayerFilter - callback-based                            */
 /* -------------------------------------------------------------------------- */
 class ObjectVsBroadPhaseLayerFilterCallback final : public ObjectVsBroadPhaseLayerFilter {
 public:
@@ -135,7 +135,7 @@ struct JoltC_ObjectVsBroadPhaseLayerFilter {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  ObjectLayerPairFilter — callback-based                                    */
+/*  ObjectLayerPairFilter - callback-based                                    */
 /* -------------------------------------------------------------------------- */
 class ObjectLayerPairFilterCallback final : public ObjectLayerPairFilter {
 public:
@@ -152,7 +152,7 @@ struct JoltC_ObjectLayerPairFilter {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  ContactListener — callback-based                                          */
+/*  ContactListener - callback-based                                          */
 /* -------------------------------------------------------------------------- */
 class ContactListenerCallback final : public ContactListener {
 public:
@@ -189,7 +189,7 @@ struct JoltC_ContactListener {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  BodyActivationListener — callback-based                                   */
+/*  BodyActivationListener - callback-based                                   */
 /* -------------------------------------------------------------------------- */
 class BodyActivationListenerCallback final : public BodyActivationListener {
 public:
@@ -213,21 +213,21 @@ struct JoltC_BodyActivationListener {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  Constraint — wraps ref-counted Constraint*                                */
+/*  Constraint - wraps ref-counted Constraint*                                */
 /* -------------------------------------------------------------------------- */
 struct JoltC_Constraint {
     Ref<Constraint> ptr;
 };
 
 /* -------------------------------------------------------------------------- */
-/*  NarrowPhaseQuery — non-owning, obtained from PhysicsSystem                */
+/*  NarrowPhaseQuery - non-owning, obtained from PhysicsSystem                */
 /* -------------------------------------------------------------------------- */
 struct JoltC_NarrowPhaseQuery {
     const NarrowPhaseQuery* ptr;
 };
 
 /* -------------------------------------------------------------------------- */
-/*  CharacterContactListener — callback-based                                 */
+/*  CharacterContactListener - callback-based                                 */
 /* -------------------------------------------------------------------------- */
 class CharacterContactListenerCallback final : public CharacterContactListener {
 public:
@@ -426,7 +426,7 @@ struct JoltC_CharacterVirtual {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  BroadPhaseLayerFilter — callback-based query filter                       */
+/*  BroadPhaseLayerFilter - callback-based query filter                       */
 /* -------------------------------------------------------------------------- */
 class BroadPhaseLayerFilterCallback final : public BroadPhaseLayerFilter {
 public:
@@ -446,7 +446,7 @@ struct JoltC_BroadPhaseLayerFilter {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  ObjectLayerFilter — callback-based query filter                           */
+/*  ObjectLayerFilter - callback-based query filter                           */
 /* -------------------------------------------------------------------------- */
 class ObjectLayerFilterCallback final : public ObjectLayerFilter {
 public:
@@ -462,7 +462,7 @@ struct JoltC_ObjectLayerFilter {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  BodyFilter — callback-based query filter                                  */
+/*  BodyFilter - callback-based query filter                                  */
 /* -------------------------------------------------------------------------- */
 class BodyFilterCallback final : public BodyFilter {
 public:
@@ -483,7 +483,7 @@ struct JoltC_BodyFilter {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  ShapeFilter — callback-based query filter                                 */
+/*  ShapeFilter - callback-based query filter                                 */
 /* -------------------------------------------------------------------------- */
 class ShapeFilterCallback final : public ShapeFilter {
 public:
@@ -509,7 +509,7 @@ struct JoltC_ShapeFilter {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  SimShapeFilter — callback-based simulation filter                         */
+/*  SimShapeFilter - callback-based simulation filter                         */
 /* -------------------------------------------------------------------------- */
 class SimShapeFilterCallback final : public SimShapeFilter {
 public:
@@ -530,7 +530,7 @@ struct JoltC_SimShapeFilter {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  PhysicsStepListener — callback-based                                      */
+/*  PhysicsStepListener - callback-based                                      */
 /* -------------------------------------------------------------------------- */
 class PhysicsStepListenerCallback final : public PhysicsStepListener {
 public:
@@ -547,7 +547,7 @@ struct JoltC_PhysicsStepListener {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  PhysicsMaterial — custom subclass that stores name + color                */
+/*  PhysicsMaterial - custom subclass that stores name + color                */
 /*                                                                            */
 /*  JoltC_PhysicsMaterial* is a reinterpret_cast of PhysicsMaterial*, the     */
 /*  same raw ref-counted pattern as JoltC_Shape. That way the material a      */
@@ -572,7 +572,7 @@ inline const JoltC_PhysicsMaterial* fromPhysicsMaterial(const PhysicsMaterial* m
 }
 
 /* -------------------------------------------------------------------------- */
-/*  GroupFilter — ref-counted, wraps GroupFilter*                             */
+/*  GroupFilter - ref-counted, wraps GroupFilter*                             */
 /* -------------------------------------------------------------------------- */
 struct JoltC_GroupFilter {
     Ref<GroupFilter> ptr;
@@ -609,7 +609,7 @@ struct JoltC_Character {
 };
 
 /* -------------------------------------------------------------------------- */
-/*  Enhanced ContactListener — passes Body/ContactManifold/ContactSettings    */
+/*  Enhanced ContactListener - passes Body/ContactManifold/ContactSettings    */
 /* -------------------------------------------------------------------------- */
 class ContactListenerEnhancedCallback final : public ContactListener {
 public:
@@ -707,14 +707,14 @@ public:
 };
 
 /* -------------------------------------------------------------------------- */
-/*  CharacterBase (polymorphic base — ref-counted, non-owning view)           */
+/*  CharacterBase (polymorphic base - ref-counted, non-owning view)           */
 /* -------------------------------------------------------------------------- */
 struct JoltC_CharacterBase {
     Ref<CharacterBase> ptr;
 };
 
 /* -------------------------------------------------------------------------- */
-/*  CharacterVsCharacterCollision — wraps Simple variant                      */
+/*  CharacterVsCharacterCollision - wraps Simple variant                      */
 /* -------------------------------------------------------------------------- */
 struct JoltC_CharacterVsCharacterCollision {
     std::unique_ptr<CharacterVsCharacterCollisionSimple> ptr;

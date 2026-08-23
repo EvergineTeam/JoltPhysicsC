@@ -1,4 +1,4 @@
-/* JoltC Test Suite — filters.h API tests
+/* JoltC Test Suite -- filters.h API tests
  * SPDX-License-Identifier: MIT
  */
 

@@ -1,4 +1,4 @@
-/* JoltC Test Suite — a live vehicle: create, register, step, read, unregister, destroy.
+/* JoltC Test Suite -- a live vehicle: create, register, step, read, unregister, destroy.
  * SPDX-License-Identifier: MIT
  *
  * This is the suite test_vehicle_extra.c deliberately deferred: everything there is a

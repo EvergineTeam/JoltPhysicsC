@@ -872,7 +872,7 @@ JOLTC_API void JoltC_VehicleTrackSettings_Init(JoltC_VehicleTrackSettings* s) {
 }
 
 /* ========================================================================== */
-/*  VehicleConstraint — GetWheelLocalBasis                                    */
+/*  VehicleConstraint - GetWheelLocalBasis                                    */
 /* ========================================================================== */
 JOLTC_API void JoltC_VehicleConstraint_GetWheelLocalBasis(const JoltC_VehicleConstraint* constraint, uint32_t wheelIndex, JoltC_Vec3* outUp, JoltC_Vec3* outForward)
 {
@@ -888,7 +888,7 @@ JOLTC_API void JoltC_VehicleConstraint_GetWheelLocalBasis(const JoltC_VehicleCon
 }
 
 /* ========================================================================== */
-/*  VehicleTransmissionSettings — individual gear ratio setters               */
+/*  VehicleTransmissionSettings - individual gear ratio setters               */
 /* ========================================================================== */
 JOLTC_API void JoltC_VehicleTransmissionSettings_SetGearRatio(JoltC_VehicleTransmissionSettings* s, int gearIndex, float ratio)
 {
@@ -913,7 +913,7 @@ JOLTC_API void JoltC_VehicleTransmissionSettings_SetReverseGearRatio(JoltC_Vehic
 }
 
 /* ========================================================================== */
-/*  Wheel / WheelWV / WheelTV — Create / Destroy                             */
+/*  Wheel / WheelWV / WheelTV - Create / Destroy                             */
 /* ========================================================================== */
 JOLTC_API JoltC_Wheel* JoltC_Wheel_Create(const JoltC_WheelSettings* settings)
 {

@@ -1,4 +1,4 @@
-/* JoltC Test Suite — character.h API tests (CharacterVirtual + Character)
+/* JoltC Test Suite -- character.h API tests (CharacterVirtual + Character)
  * SPDX-License-Identifier: MIT
  */
 

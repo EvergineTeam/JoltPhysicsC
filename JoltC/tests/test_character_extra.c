@@ -1,4 +1,4 @@
-/* JoltC Test Suite — character.h, second suite (settings round-trips, lifetime,
+/* JoltC Test Suite -- character.h, second suite (settings round-trips, lifetime,
  * null safety, structural queries)
  * SPDX-License-Identifier: MIT
  *
@@ -119,7 +119,7 @@ void run_character_extra_tests(void)
         TEST_ASSERT_FLOAT_EQ(s.up.x, 0.0f, 1e-6f, "default up.x == 0");
         TEST_ASSERT_FLOAT_EQ(s.up.y, 1.0f, 1e-6f, "default up.y == 1");
         TEST_ASSERT_FLOAT_EQ(s.up.z, 0.0f, 1e-6f, "default up.z == 0");
-        /* maxSlopeAngle is in RADIANS — 50 degrees. A degrees/radians mix-up in a
+        /* maxSlopeAngle is in RADIANS -- 50 degrees. A degrees/radians mix-up in a
          * repair would show up right here. */
         TEST_ASSERT_FLOAT_EQ(s.maxSlopeAngle, 0.87266463f, 1e-5f, "default maxSlopeAngle == 50 deg in radians");
         TEST_ASSERT(s.enhancedInternalEdgeRemoval == JOLTC_FALSE, "default enhancedInternalEdgeRemoval false");
@@ -192,7 +192,7 @@ void run_character_extra_tests(void)
         TEST_ASSERT(a.enhancedInternalEdgeRemoval == JOLTC_FALSE, "default enhancedInternalEdgeRemoval false");
         TEST_ASSERT(a.shape == NULL, "default shape NULL");
         TEST_ASSERT(a.layer == 0, "default layer == 0");
-        /* Character defaults to mass 80 while CharacterVirtual defaults to 70 —
+        /* Character defaults to mass 80 while CharacterVirtual defaults to 70 --
          * distinct on purpose, so a copy/paste between the two is visible. */
         TEST_ASSERT_FLOAT_EQ(a.mass, 80.0f, 1e-4f, "default mass == 80");
         TEST_ASSERT_FLOAT_EQ(a.friction, 0.2f, 1e-6f, "default friction == 0.2");
@@ -268,7 +268,7 @@ void run_character_extra_tests(void)
         s.mass = 55.5f;
         s.maxStrength = 123.25f;
         s.shapeOffset.x = 1.5f; s.shapeOffset.y = -2.25f; s.shapeOffset.z = 3.75f;
-        s.backFaceMode = JOLTC_BACK_FACE_IGNORE;         /* no accessor — see report */
+        s.backFaceMode = JOLTC_BACK_FACE_IGNORE;         /* no accessor -- see report */
         s.predictiveContactDistance = 0.075f;            /* no accessor */
         s.maxCollisionIterations = 7;                    /* no accessor */
         s.maxConstraintIterations = 11;                  /* no accessor */
@@ -291,7 +291,7 @@ void run_character_extra_tests(void)
         TEST_ASSERT_FLOAT_EQ(up.y, 0.8f, 1e-5f, "up.y round-trips");
         TEST_ASSERT_FLOAT_EQ(up.z, 0.0f, 1e-5f, "up.z round-trips");
 
-        /* maxSlopeAngle is stored as its cosine — this is the accessor that proves
+        /* maxSlopeAngle is stored as its cosine -- this is the accessor that proves
          * the angle was taken as radians and not degrees. */
         TEST_ASSERT_FLOAT_EQ(JoltC_CharacterVirtual_GetCosMaxSlopeAngle(cv), cosf(0.6f), 1e-5f,
                              "cos(maxSlopeAngle) round-trips");
@@ -316,7 +316,7 @@ void run_character_extra_tests(void)
                              "penetrationRecoverySpeed round-trips");
 
         /* position and user data were passed as separate arguments, not in the
-         * settings struct — check the argument order too. */
+         * settings struct -- check the argument order too. */
         JoltC_RVec3 gotPos = JoltC_CharacterVirtual_GetPosition(cv);
         TEST_ASSERT_FLOAT_EQ(gotPos.x, 1.5f, 1e-4f, "position.x from create argument");
         TEST_ASSERT_FLOAT_EQ(gotPos.y, -2.25f, 1e-4f, "position.y from create argument");
@@ -501,7 +501,7 @@ void run_character_extra_tests(void)
     /* ====================================================================== */
 
     /* Compares two accessors against each other rather than against literals, so
-     * it cannot go stale — but it still catches a row/column transposition in the
+     * it cannot go stale -- but it still catches a row/column transposition in the
      * Mat44 conversion, which is exactly the kind of thing a hand repair breaks. */
     TEST_BEGIN("CharacterVirtual transforms agree with position/rotation");
     {
@@ -655,7 +655,7 @@ void run_character_extra_tests(void)
         TEST_ASSERT(sentinelSubShape == 0x5A5A5A5Au, "out-of-range GetActiveContact left sub shape id alone");
 
         /* No contacts means nothing to cancel: the desired velocity comes back
-         * unchanged. (Asserted only in the zero-contact case on purpose — with
+         * unchanged. (Asserted only in the zero-contact case on purpose -- with
          * contacts present this is solver territory.) */
         JoltC_Vec3 desired = { 1.5f, -2.25f, 3.75f };
         JoltC_Vec3 cancelled = JoltC_CharacterVirtual_CancelVelocityTowardsSteepSlopes(cv, desired);
@@ -894,7 +894,7 @@ void run_character_extra_tests(void)
     /* ====================================================================== */
 
     /* Whether Jolt raises a contact callback for a given overlap, and how many
-     * times, is version-dependent — so the call counts are NOT asserted. What is
+     * times, is version-dependent -- so the call counts are NOT asserted. What is
      * asserted is the part the C binding owns: the userData round-trip and the
      * out-parameters, plus attach/detach/destroy without a crash. */
     TEST_BEGIN("CharacterContactListener plumbing");
@@ -978,7 +978,7 @@ void run_character_extra_tests(void)
         JoltC_CharacterSettings_SetDefault(&s);
         s.up.x = 0.6f; s.up.y = 0.8f; s.up.z = 0.0f;   /* normalized, asymmetric */
         s.maxSlopeAngle = 0.75f;                        /* radians */
-        s.enhancedInternalEdgeRemoval = JOLTC_TRUE;     /* no accessor — see report */
+        s.enhancedInternalEdgeRemoval = JOLTC_TRUE;     /* no accessor -- see report */
         s.shape = capsule;
         s.layer = OBJ_LAYER_DYNAMIC;
         s.mass = 55.0f;
@@ -1074,7 +1074,7 @@ void run_character_extra_tests(void)
         if (bodyShape) JoltC_Shape_Release(bodyShape);
         JoltC_Character_SetShape(c, NULL, 1000.0f, JOLTC_TRUE);   /* guard: must be ignored */
 
-        /* One real step, then PostSimulation — the classification it produces is not
+        /* One real step, then PostSimulation -- the classification it produces is not
          * asserted, only that it stays inside the enum. */
         JoltC_PhysicsSystem_Update(ctx.physicsSystem, 1.0f / 60.0f, 1, ctx.tempAllocator, ctx.jobSystem);
         JoltC_Character_PostSimulation(c, 0.05f, JOLTC_TRUE);
@@ -1239,7 +1239,7 @@ void run_character_extra_tests(void)
     /* 10. CharacterBase view                                                 */
     /* ====================================================================== */
 
-    /* AsBase is a hand-written cast between two wrapper structs — precisely the
+    /* AsBase is a hand-written cast between two wrapper structs -- precisely the
      * sort of code a repair can point at the wrong object without failing to
      * compile. Writing through the base view and reading back through the derived
      * accessors proves both handles refer to the same character. */
@@ -1328,7 +1328,7 @@ void run_character_extra_tests(void)
     /* 11. Null safety on the accessors                                       */
     /* ====================================================================== */
 
-    /* Only the guard values that carry meaning are asserted — "no ground body",
+    /* Only the guard values that carry meaning are asserted -- "no ground body",
      * "not supported", "invalid layer", "in air". The wrapper also returns a
      * zero vector from some vector getters and (0,1,0) from others; that
      * inconsistency is reported rather than frozen into a test. */

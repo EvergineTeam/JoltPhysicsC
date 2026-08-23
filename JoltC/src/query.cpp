@@ -113,7 +113,7 @@ JOLTC_API const JoltC_NarrowPhaseQuery* JoltC_PhysicsSystem_GetNarrowPhaseQueryN
 }
 
 /* -------------------------------------------------------------------------- */
-/*  CastRay — single closest hit (no filters)                                 */
+/*  CastRay - single closest hit (no filters)                                 */
 /* -------------------------------------------------------------------------- */
 JOLTC_API JoltC_Bool JoltC_NarrowPhaseQuery_CastRay(
     const JoltC_NarrowPhaseQuery* query,
@@ -134,7 +134,7 @@ JOLTC_API JoltC_Bool JoltC_NarrowPhaseQuery_CastRay(
 }
 
 /* -------------------------------------------------------------------------- */
-/*  CastRay — multiple hits via callback (no filters)                         */
+/*  CastRay - multiple hits via callback (no filters)                         */
 /* -------------------------------------------------------------------------- */
 class CastRayCallbackCollector final : public CastRayCollector {
 public:
@@ -197,7 +197,7 @@ JOLTC_API void JoltC_NarrowPhaseQuery_CollidePoint(
 }
 
 /* -------------------------------------------------------------------------- */
-/*  CastRay2 — single closest hit with filters                                */
+/*  CastRay2 - single closest hit with filters                                */
 /* -------------------------------------------------------------------------- */
 JOLTC_API JoltC_Bool JoltC_NarrowPhaseQuery_CastRay2(
     const JoltC_NarrowPhaseQuery* query,
@@ -221,7 +221,7 @@ JOLTC_API JoltC_Bool JoltC_NarrowPhaseQuery_CastRay2(
 }
 
 /* -------------------------------------------------------------------------- */
-/*  CastRay3 — multiple hits with all filters                                 */
+/*  CastRay3 - multiple hits with all filters                                 */
 /* -------------------------------------------------------------------------- */
 JOLTC_API void JoltC_NarrowPhaseQuery_CastRay3(
     const JoltC_NarrowPhaseQuery* query,
@@ -250,7 +250,7 @@ JOLTC_API void JoltC_NarrowPhaseQuery_CastRay3(
 }
 
 /* -------------------------------------------------------------------------- */
-/*  CollidePoint2 — with filters                                              */
+/*  CollidePoint2 - with filters                                              */
 /* -------------------------------------------------------------------------- */
 JOLTC_API void JoltC_NarrowPhaseQuery_CollidePoint2(
     const JoltC_NarrowPhaseQuery* query,
@@ -473,7 +473,7 @@ JOLTC_API const JoltC_BroadPhaseQuery* JoltC_PhysicsSystem_GetBroadPhaseQuery(co
 }
 
 /* -------------------------------------------------------------------------- */
-/*  BroadPhaseQuery — CastRay                                                 */
+/*  BroadPhaseQuery - CastRay                                                 */
 /* -------------------------------------------------------------------------- */
 class BroadPhaseCastRayCollector final : public RayCastBodyCollector {
 public:
@@ -505,7 +505,7 @@ JOLTC_API void JoltC_BroadPhaseQuery_CastRay(
 }
 
 /* -------------------------------------------------------------------------- */
-/*  BroadPhaseQuery — CollideAABox                                            */
+/*  BroadPhaseQuery - CollideAABox                                            */
 /* -------------------------------------------------------------------------- */
 class BroadPhaseCollideBodyCollector final : public CollideShapeBodyCollector {
 public:
@@ -534,7 +534,7 @@ JOLTC_API void JoltC_BroadPhaseQuery_CollideAABox(
 }
 
 /* -------------------------------------------------------------------------- */
-/*  BroadPhaseQuery — CollideSphere                                           */
+/*  BroadPhaseQuery - CollideSphere                                           */
 /* -------------------------------------------------------------------------- */
 JOLTC_API void JoltC_BroadPhaseQuery_CollideSphere(
     const JoltC_BroadPhaseQuery* query,
@@ -553,7 +553,7 @@ JOLTC_API void JoltC_BroadPhaseQuery_CollideSphere(
 }
 
 /* -------------------------------------------------------------------------- */
-/*  BroadPhaseQuery — CollidePoint                                            */
+/*  BroadPhaseQuery - CollidePoint                                            */
 /* -------------------------------------------------------------------------- */
 JOLTC_API void JoltC_BroadPhaseQuery_CollidePoint(
     const JoltC_BroadPhaseQuery* query,

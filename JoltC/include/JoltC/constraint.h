@@ -474,7 +474,7 @@ JOLTC_API void JoltC_HingeConstraint_SetTargetOrientationBS(JoltC_Constraint* c,
 JOLTC_API void JoltC_SwingTwistConstraint_SetTargetOrientationBS(JoltC_Constraint* c, JoltC_Quat orientation);
 
 /* -------------------------------------------------------------------------- */
-/*  PathConstraintPath — the curve a path constraint follows                  */
+/*  PathConstraintPath - the curve a path constraint follows                  */
 /* -------------------------------------------------------------------------- */
 /* Ref-counted raw handle, like shapes: Release when done, the constraint keeps its own. */
 JOLTC_API JoltC_PathConstraintPath* JoltC_PathConstraintPathHermite_Create(void);
@@ -490,7 +490,7 @@ JOLTC_API void       JoltC_PathConstraintPath_AddRef(const JoltC_PathConstraintP
 JOLTC_API void       JoltC_PathConstraintPath_Release(const JoltC_PathConstraintPath* path);
 
 /* -------------------------------------------------------------------------- */
-/*  PathConstraint — a body constrained to slide along a curve                */
+/*  PathConstraint - a body constrained to slide along a curve                */
 /* -------------------------------------------------------------------------- */
 typedef struct JoltC_PathConstraintSettings {
     const JoltC_PathConstraintPath*  path;             /* the curve; the settings take no reference, Create does */

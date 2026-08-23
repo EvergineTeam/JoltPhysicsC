@@ -1,4 +1,4 @@
-/* JoltC Test Suite — phase 4: constraints and vehicles to one hundred percent.
+/* JoltC Test Suite -- phase 4: constraints and vehicles to one hundred percent.
  * SPDX-License-Identifier: MIT
  *
  * Before this phase the PathConstraint existed only as an enum value, the pulley could be created

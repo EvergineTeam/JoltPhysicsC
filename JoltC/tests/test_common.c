@@ -1,4 +1,4 @@
-/* JoltC Test Suite — common.h API tests (init, error handling, trace)
+/* JoltC Test Suite -- common.h API tests (init, error handling, trace)
  * SPDX-License-Identifier: MIT
  */
 

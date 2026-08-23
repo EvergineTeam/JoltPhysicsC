@@ -1,4 +1,4 @@
-/* JoltC Test Suite — vehicle.h, second suite (settings round-trips, macro-generated
+/* JoltC Test Suite -- vehicle.h, second suite (settings round-trips, macro-generated
  * accessor blocks, null safety, structural checks)
  * SPDX-License-Identifier: MIT
  *
@@ -14,7 +14,7 @@
  * WS_FLOAT_PROP, WSWV_FLOAT, MCS_FLOAT and TS_FLOAT each expand a (Name, Field)
  * pair into a getter and a setter, so a single wrong member name silently breaks
  * both halves of one property while leaving the rest of the block correct. A
- * per-property round-trip cannot see that — reading back what you just wrote to the
+ * per-property round-trip cannot see that -- reading back what you just wrote to the
  * wrong member still returns the right value. What sees it is writing every property
  * in a block to a DISTINCT value and only then reading them all back: if two entries
  * of a macro block name the same member, the second write destroys the first and the
@@ -129,11 +129,11 @@ void run_vehicle_extra_tests(void)
     /*  1. Enum numbering contract                                            */
     /* ====================================================================== */
 
-    /* vehicle.cpp converts these with a bare cast — (ESpringMode)v.mode — so the C
+    /* vehicle.cpp converts these with a bare cast -- (ESpringMode)v.mode -- so the C
      * enumerators must keep the numeric values of the Jolt ones. 5.6.0 adds
      * ESpringMode::MassNormalizedStiffnessAndDamping and EMotorState::PositionAndVelocity;
      * both must be APPENDED. If either is inserted ahead of an existing enumerator
-     * and common.h is renumbered to match, this test fails and says so loudly —
+     * and common.h is renumbered to match, this test fails and says so loudly --
      * which is the intent, because every stored spring mode would silently change
      * meaning. Read through variables so the comparison is not constant-folded into
      * a /W4 warning. */
@@ -154,7 +154,7 @@ void run_vehicle_extra_tests(void)
     TEST_END();
 
     /* ====================================================================== */
-    /*  2. LinearCurve — the parts test_vehicle.c does not reach              */
+    /*  2. LinearCurve - the parts test_vehicle.c does not reach              */
     /* ====================================================================== */
 
     TEST_BEGIN("LinearCurve Reserve / Clear / point count");
@@ -263,7 +263,7 @@ void run_vehicle_extra_tests(void)
     TEST_END();
 
     /* ====================================================================== */
-    /*  3. WheelSettings — WS_VEC3_PROP and WS_FLOAT_PROP macro blocks        */
+    /*  3. WheelSettings - WS_VEC3_PROP and WS_FLOAT_PROP macro blocks        */
     /* ====================================================================== */
 
     /* Six Vec3 properties from one macro and five floats from another. Everything is
@@ -296,7 +296,7 @@ void run_vehicle_extra_tests(void)
 
         /* Min 0.125 vs max 0.875 vs preload 0.0625: three same-typed neighbours in one
          * macro block, all far apart. Note the naming is upstream's and is not what it
-         * sounds like — "min" length is the fully raised pose, "max" the fully drooped
+         * sounds like -- "min" length is the fully raised pose, "max" the fully drooped
          * one, and the spring's natural length is max + preload. */
         TEST_ASSERT_FLOAT_EQ(JoltC_WheelSettings_GetSuspensionMinLength(ws), 0.125f, 1e-6f,
                              "suspensionMinLength round-trips");
@@ -328,7 +328,7 @@ void run_vehicle_extra_tests(void)
         JoltC_SpringSettings spring;
         JoltC_SpringSettings out;
 
-        /* Frequency mode. 2.25 Hz vs damping ratio 0.375 — far apart, so an exchange
+        /* Frequency mode. 2.25 Hz vs damping ratio 0.375 -- far apart, so an exchange
          * of the two fields cannot pass. */
         spring.mode = JOLTC_SPRING_MODE_FREQUENCY_AND_DAMPING;
         spring.frequencyOrStiffness = 2.25f;
@@ -341,7 +341,7 @@ void run_vehicle_extra_tests(void)
         TEST_ASSERT_FLOAT_EQ(out.damping, 0.375f, 1e-6f, "spring damping == 0.375");
 
         /* Stiffness mode. Stiffness is in N/m, so a realistic value is four orders of
-         * magnitude away from a frequency in Hz — a mode that is ignored on the way in
+         * magnitude away from a frequency in Hz -- a mode that is ignored on the way in
          * or out is very visible. */
         spring.mode = JOLTC_SPRING_MODE_STIFFNESS_AND_DAMPING;
         spring.frequencyOrStiffness = 7500.5f;
@@ -402,7 +402,7 @@ void run_vehicle_extra_tests(void)
     TEST_END();
 
     /* ====================================================================== */
-    /*  4. WheelSettingsWV — WSWV_FLOAT block and the friction curves         */
+    /*  4. WheelSettingsWV - WSWV_FLOAT block and the friction curves         */
     /* ====================================================================== */
 
     TEST_BEGIN("WheelSettingsWV five-float block round-trip");
@@ -606,7 +606,7 @@ void run_vehicle_extra_tests(void)
                     "fresh wheel contact body invalid");
         /* Jolt's empty sub shape path is all bits set. Worth pinning because the
          * wrapper's NULL fallback for this same getter is 0, and 0 is a perfectly
-         * legal sub shape ID — so "no contact" and "sub shape 0" are distinguishable
+         * legal sub shape ID -- so "no contact" and "sub shape 0" are distinguishable
          * only as long as this sentinel holds. */
         TEST_ASSERT(JoltC_Wheel_GetContactSubShapeID(wheel) == 0xFFFFFFFFu,
                     "fresh wheel contact sub shape ID is the empty path sentinel");
@@ -664,11 +664,11 @@ void run_vehicle_extra_tests(void)
 
     /* WheelWV / WheelTV are constructed from a settings pointer that the
      * implementation static_casts to the derived settings type, so they must be fed
-     * a WheelSettingsWV / WheelSettingsTV cast to the base handle — the C types give
+     * a WheelSettingsWV / WheelSettingsTV cast to the base handle -- the C types give
      * no help here. ApplyTorque is included because it is the one runtime function
      * with a documented closed-form result: dw = torque * dt / inertia. That makes it
      * a genuine check that WSWV_FLOAT(Inertia, mInertia) names the right member,
-     * and it is not a trajectory assertion — no solver is involved. */
+     * and it is not a trajectory assertion -- no solver is involved. */
     TEST_BEGIN("WheelWV / WheelTV create, settings, ApplyTorque");
     {
         JoltC_WheelSettingsWV* wsWV = JoltC_WheelSettingsWV_Create();
@@ -831,7 +831,7 @@ void run_vehicle_extra_tests(void)
 
         JoltC_VehicleAntiRollBar_Init(&bar);
 
-        /* Upstream defaults are 0 and 1 — different values, so a swapped assignment
+        /* Upstream defaults are 0 and 1 -- different values, so a swapped assignment
          * inside the initialiser is caught. */
         TEST_ASSERT(bar.leftWheel == 0, "default anti-roll bar leftWheel == 0");
         TEST_ASSERT(bar.rightWheel == 1, "default anti-roll bar rightWheel == 1");
@@ -1083,7 +1083,7 @@ void run_vehicle_extra_tests(void)
     TEST_END();
 
     /* ====================================================================== */
-    /*  9. VehicleTransmissionSettings — TS_FLOAT block and the gear arrays   */
+    /*  9. VehicleTransmissionSettings - TS_FLOAT block and the gear arrays   */
     /* ====================================================================== */
 
     TEST_BEGIN("VehicleTransmissionSettings six-float block round-trip");
@@ -1092,7 +1092,7 @@ void run_vehicle_extra_tests(void)
         TEST_ASSERT_NOT_NULL(ts, "VehicleTransmissionSettings not null");
 
         /* Defaults. switchTime 0.5 and switchLatency 0.5 are equal upstream, so they
-         * cannot tell each other apart here — clutchReleaseTime 0.3 can, and the
+         * cannot tell each other apart here -- clutchReleaseTime 0.3 can, and the
          * round-trip below uses three distinct values to cover all three. */
         TEST_ASSERT_FLOAT_EQ(JoltC_VehicleTransmissionSettings_GetSwitchTime(ts), 0.5f, 1e-6f,
                              "default switchTime == 0.5 s");
@@ -1142,7 +1142,7 @@ void run_vehicle_extra_tests(void)
         const float gears[3] = { 3.5f, 2.25f, 1.125f };
         const float reverse[2] = { -2.5f, -1.25f };
 
-        /* Forward ratios are positive and reverse ratios negative — a sign
+        /* Forward ratios are positive and reverse ratios negative -- a sign
          * convention the C API neither documents nor enforces, though the controller
          * asserts it. Keeping the signs right here is what makes these values usable. */
         JoltC_VehicleTransmissionSettings_SetGearRatios(ts, gears, 3);
@@ -1169,7 +1169,7 @@ void run_vehicle_extra_tests(void)
                              "reverse gear out of range == 0");
 
         /* Single-gear setters grow the array, zero-filling the gap. The zero fill is
-         * the documented-by-code behaviour, so it is pinned here — but note it
+         * the documented-by-code behaviour, so it is pinned here -- but note it
          * produces ratios of 0, which WheeledVehicleController asserts against
          * (it requires every forward ratio > 0). Writing gear 4 of a 3-gear box and
          * then building a controller is therefore a debug assert waiting to happen. */
@@ -1200,7 +1200,7 @@ void run_vehicle_extra_tests(void)
                     "negative reverse gear index did not resize");
 
         /* Null guards. Note GetMode(NULL) reports AUTO, which is indistinguishable
-         * from a real automatic gearbox — the only accessor in this header whose
+         * from a real automatic gearbox -- the only accessor in this header whose
          * failure value is a legal value. */
         JoltC_VehicleTransmissionSettings_SetGearRatios(NULL, gears, 3);
         JoltC_VehicleTransmissionSettings_SetGearRatios(ts, NULL, 3);
@@ -1239,7 +1239,7 @@ void run_vehicle_extra_tests(void)
     TEST_END();
 
     /* ====================================================================== */
-    /* 10. MotorcycleControllerSettings — MCS_FLOAT block                     */
+    /* 10. MotorcycleControllerSettings - MCS_FLOAT block                     */
     /* ====================================================================== */
 
     TEST_BEGIN("MotorcycleControllerSettings six-float block round-trip");
@@ -1346,8 +1346,8 @@ void run_vehicle_extra_tests(void)
     /* Upstream gives the tracked controller its own engine and gearbox defaults
      * (tuned for a tank), which is what makes this test able to prove the two Create
      * functions really build different types. If TrackedVehicleControllerSettings_Create
-     * were ever repaired into constructing a WheeledVehicleControllerSettings — a
-     * plausible copy/paste during a bump, and one that compiles and runs — the RPM
+     * were ever repaired into constructing a WheeledVehicleControllerSettings -- a
+     * plausible copy/paste during a bump, and one that compiles and runs -- the RPM
      * limits and gear counts below are what would notice. */
     TEST_BEGIN("TrackedVehicleControllerSettings has tracked-specific defaults");
     {

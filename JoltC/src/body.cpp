@@ -118,7 +118,7 @@ static void setJphBCSDefaults(JoltC_BodyCreationSettings* s) {
 extern "C" {
 
 /* ========================================================================== */
-/*  BodyCreationSettings — opaque-handle API                                  */
+/*  BodyCreationSettings - opaque-handle API                                  */
 /* ========================================================================== */
 JOLTC_API JoltC_BodyCreationSettings* JoltC_BodyCreationSettings_Create(void) {
     auto* s = new JoltC_BodyCreationSettings;
@@ -1024,7 +1024,7 @@ JOLTC_API int JoltC_BodyInterface_ApplyBuoyancyImpulse(JoltC_BodyInterface* ifac
 }
 
 /* -------------------------------------------------------------------------- */
-/*  BodyInterface — collision group                                           */
+/*  BodyInterface - collision group                                           */
 /* -------------------------------------------------------------------------- */
 JOLTC_API void JoltC_BodyInterface_GetCollisionGroup(const JoltC_BodyInterface* iface, JoltC_BodyID bodyID, JoltC_CollisionGroup* outGroup)
 {
@@ -1056,7 +1056,7 @@ JOLTC_API void JoltC_BodyInterface_SetCollisionGroup(JoltC_BodyInterface* iface,
 }
 
 /* -------------------------------------------------------------------------- */
-/*  BodyInterface — additional methods (batch 2)                              */
+/*  BodyInterface - additional methods (batch 2)                              */
 /* -------------------------------------------------------------------------- */
 JOLTC_API void JoltC_BodyInterface_ActivateBodiesInAABox(JoltC_BodyInterface* iface, JoltC_Vec3 min, JoltC_Vec3 max)
 {
@@ -1093,7 +1093,7 @@ JOLTC_API int JoltC_BodyInterface_AssignBodyID2(JoltC_BodyInterface* iface, Jolt
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Body — direct access                                                      */
+/*  Body - direct access                                                      */
 /* -------------------------------------------------------------------------- */
 JOLTC_API void JoltC_Body_GetCollisionGroup(const JoltC_Body* body, JoltC_CollisionGroup* outGroup)
 {
@@ -1127,7 +1127,7 @@ JOLTC_API const JoltC_Body* JoltC_Body_GetFixedToWorldBody(void)
 }
 
 /* -------------------------------------------------------------------------- */
-/*  BodyInterface — SoftBody creation                                         */
+/*  BodyInterface - SoftBody creation                                         */
 /* -------------------------------------------------------------------------- */
 static inline JoltC_SoftBodyCreationSettings_Impl* asSBCS(const JoltC_SoftBodyCreationSettings* s) {
     return reinterpret_cast<JoltC_SoftBodyCreationSettings_Impl*>(const_cast<JoltC_SoftBodyCreationSettings*>(s));

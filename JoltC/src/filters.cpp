@@ -141,7 +141,7 @@ JOLTC_API void JoltC_SimShapeFilter_Destroy(JoltC_SimShapeFilter* filter) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  SetProcs — update function pointers on existing filter objects            */
+/*  SetProcs - update function pointers on existing filter objects            */
 /* -------------------------------------------------------------------------- */
 JOLTC_API void JoltC_BroadPhaseLayerFilter_SetProcs(JoltC_BroadPhaseLayerFilter* filter, JoltC_BroadPhaseLayerFilter_Procs procs, void* userData)
 {

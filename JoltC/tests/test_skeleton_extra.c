@@ -1,4 +1,4 @@
-/* JoltC Test Suite — skeleton.h coverage beyond test_skeleton.c
+/* JoltC Test Suite -- skeleton.h coverage beyond test_skeleton.c
  * SPDX-License-Identifier: MIT
  *
  * test_skeleton.c exercises 20 of the 82 functions in skeleton.h and stops at

@@ -1,4 +1,4 @@
-/* JoltC Test Suite — phase 2: the complete soft body surface.
+/* JoltC Test Suite -- phase 2: the complete soft body surface.
  * SPDX-License-Identifier: MIT
  *
  * Before this phase the construction API was faces-plus-one-compliance: one attribute broadcast to

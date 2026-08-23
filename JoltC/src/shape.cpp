@@ -42,7 +42,7 @@
 using namespace JPH;
 
 /* -------------------------------------------------------------------------- */
-/*  Helpers — Shape* ↔ JoltC_Shape* reinterpret casts                         */
+/*  Helpers - Shape* ↔ JoltC_Shape* reinterpret casts                         */
 /* -------------------------------------------------------------------------- */
 static inline const Shape* asShape(const JoltC_Shape* h) {
     return reinterpret_cast<const Shape*>(h);
@@ -1856,7 +1856,7 @@ JOLTC_API JoltC_Vec3 JoltC_PlaneShape_GetPlane(const JoltC_Shape* shape, float* 
 }
 
 /* ========================================================================== */
-/*  Shape base — additional functions                                         */
+/*  Shape base - additional functions                                         */
 /* ========================================================================== */
 JOLTC_API JoltC_Vec3 JoltC_Shape_GetSurfaceNormal(const JoltC_Shape* shape, uint32_t subShapeId, JoltC_Vec3 localSurfacePosition)
 {
@@ -1916,7 +1916,7 @@ JOLTC_API const JoltC_Shape* JoltC_Shape_ScaleShape(const JoltC_Shape* shape, Jo
 }
 
 /* ========================================================================== */
-/*  HeightFieldShape — ProjectOntoSurface                                     */
+/*  HeightFieldShape - ProjectOntoSurface                                     */
 /* ========================================================================== */
 JOLTC_API int JoltC_HeightFieldShape_ProjectOntoSurface(const JoltC_Shape* shape, JoltC_Vec3 localPosition, JoltC_Vec3* outSurfacePosition, uint32_t* outSubShapeId)
 {
@@ -1936,7 +1936,7 @@ JOLTC_API int JoltC_HeightFieldShape_ProjectOntoSurface(const JoltC_Shape* shape
 }
 
 /* ========================================================================== */
-/*  HeightFieldShape — materials and runtime deformation                      */
+/*  HeightFieldShape - materials and runtime deformation                      */
 /* ========================================================================== */
 JOLTC_API const JoltC_PhysicsMaterial* JoltC_HeightFieldShape_GetMaterial(const JoltC_Shape* shape, uint32_t x, uint32_t y)
 {
@@ -2014,7 +2014,7 @@ JOLTC_API JoltC_Bool JoltC_HeightFieldShape_SetMaterials(
 }
 
 /* ========================================================================== */
-/*  HeightFieldShapeSettings — generic (via JoltC_ShapeSettings*)             */
+/*  HeightFieldShapeSettings - generic (via JoltC_ShapeSettings*)             */
 /* ========================================================================== */
 JOLTC_API float JoltC_HeightFieldShapeSettings_GetActiveEdgeCosThresholdAngle(const JoltC_ShapeSettings* settings)
 {
@@ -2059,7 +2059,7 @@ JOLTC_API void JoltC_HeightFieldShapeSettings_DetermineMinAndMaxSample(JoltC_Sha
 }
 
 /* ========================================================================== */
-/*  MeshShapeSettings — generic (via JoltC_ShapeSettings*)                    */
+/*  MeshShapeSettings - generic (via JoltC_ShapeSettings*)                    */
 /* ========================================================================== */
 JOLTC_API float JoltC_MeshShapeSettings_GetActiveEdgeCosThresholdAngle(const JoltC_ShapeSettings* settings)
 {
@@ -2113,7 +2113,7 @@ JOLTC_API void JoltC_MeshShapeSettings_SetBuildQuality(JoltC_ShapeSettings* sett
 }
 
 /* ========================================================================== */
-/*  MeshShape — instance queries                                              */
+/*  MeshShape - instance queries                                              */
 /* ========================================================================== */
 JOLTC_API uint32_t JoltC_MeshShape_GetTriangleUserData(const JoltC_Shape* shape, uint32_t subShapeId)
 {
@@ -2127,7 +2127,7 @@ JOLTC_API uint32_t JoltC_MeshShape_GetTriangleUserData(const JoltC_Shape* shape,
 }
 
 /* ========================================================================== */
-/*  CompoundShape — GetSubShapeIndexFromID                                    */
+/*  CompoundShape - GetSubShapeIndexFromID                                    */
 /* ========================================================================== */
 JOLTC_API uint32_t JoltC_CompoundShape_GetSubShapeIndexFromID(const JoltC_Shape* shape, uint32_t subShapeId, uint32_t* outRemainder)
 {
@@ -2144,7 +2144,7 @@ JOLTC_API uint32_t JoltC_CompoundShape_GetSubShapeIndexFromID(const JoltC_Shape*
 }
 
 /* ========================================================================== */
-/*  MutableCompoundShape — ModifyShape2                                       */
+/*  MutableCompoundShape - ModifyShape2                                       */
 /* ========================================================================== */
 JOLTC_API void JoltC_MutableCompoundShape_ModifyShape2(JoltC_Shape* shape, uint32_t subShapeIndex, JoltC_Vec3 position, JoltC_Quat rotation, const JoltC_Shape* newShape)
 {
@@ -2186,14 +2186,14 @@ JOLTC_API void JoltC_ShapeCastSettings_Init(JoltC_ShapeCastSettings* settings)
 /* ========================================================================== */
 JOLTC_API void JoltC_CollideShapeResult_FreeMembers(JoltC_CollideShapeResult* result)
 {
-    /* The C struct is blittable and doesn't own any heap memory — this is a no-op
+    /* The C struct is blittable and doesn't own any heap memory -- this is a no-op
        provided for API completeness / FFI parity. */
     (void)result;
 }
 
 JOLTC_API void JoltC_CollisionEstimationResult_FreeMembers(JoltC_CollisionEstimationResult* result)
 {
-    /* The C wrapper does not include the dynamic impulse array — no-op. */
+    /* The C wrapper does not include the dynamic impulse array -- no-op. */
     (void)result;
 }
 

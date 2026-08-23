@@ -125,7 +125,7 @@ JOLTC_API void JoltC_BodyLockWrite_Destroy(JoltC_BodyLockWrite* lock) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  BodyLockInterface — Lock / Unlock (alternative naming)                    */
+/*  BodyLockInterface - Lock / Unlock (alternative naming)                    */
 /* -------------------------------------------------------------------------- */
 JOLTC_API JoltC_BodyLockRead* JoltC_BodyLockInterface_LockRead(const JoltC_BodyLockInterface* lockInterface, uint32_t bodyId) {
     if (!lockInterface) return nullptr;
@@ -216,7 +216,7 @@ JOLTC_API JoltC_Body* JoltC_BodyLockMultiWrite_GetBody(JoltC_BodyLockMultiWrite*
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Body — read-only queries                                                  */
+/*  Body - read-only queries                                                  */
 /* -------------------------------------------------------------------------- */
 JOLTC_API JoltC_BodyID JoltC_Body_GetID(const JoltC_Body* body) {
     if (!body) return JOLTC_BODY_ID_INVALID;

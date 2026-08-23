@@ -1,4 +1,4 @@
-/* JoltC Test Suite — shape properties and settings round-trips
+/* JoltC Test Suite -- shape properties and settings round-trips
  * SPDX-License-Identifier: MIT
  *
  * test_shape.c covers construction: it creates one of each shape and checks the handle,

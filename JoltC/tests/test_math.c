@@ -1,4 +1,4 @@
-/* JoltC Test Suite — math.h API tests (Vec3, Quat, Mat44)
+/* JoltC Test Suite -- math.h API tests (Vec3, Quat, Mat44)
  * SPDX-License-Identifier: MIT
  */
 
@@ -153,7 +153,7 @@ void run_math_tests(void)
         JoltC_Quat_Slerp(&identity, &rotated, 0.0f, &r0);
         JoltC_Quat_Slerp(&identity, &rotated, 1.0f, &r1);
         TEST_ASSERT_FLOAT_EQ(r0.w, identity.w, 0.01f, "slerp(0) ~ identity");
-        /* Compare all components with tolerance — slerp may flip sign */
+        /* Compare all components with tolerance -- slerp may flip sign */
         float dot = r1.x*rotated.x + r1.y*rotated.y + r1.z*rotated.z + r1.w*rotated.w;
         TEST_ASSERT(fabsf(dot) > 0.99f, "slerp(1) ~ rotated");
     }

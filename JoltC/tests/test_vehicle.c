@@ -1,4 +1,4 @@
-/* JoltC Test Suite — vehicle.h API tests (wheels, engine, transmission, constraints)
+/* JoltC Test Suite -- vehicle.h API tests (wheels, engine, transmission, constraints)
  * SPDX-License-Identifier: MIT
  */
 

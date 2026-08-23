@@ -1,4 +1,4 @@
-/* JoltC Test Suite — shape.h API tests
+/* JoltC Test Suite -- shape.h API tests
  * SPDX-License-Identifier: MIT
  */
 

@@ -1,4 +1,4 @@
-/* JoltC Test Suite — phase 1: physics materials end to end and shape introspection.
+/* JoltC Test Suite -- phase 1: physics materials end to end and shape introspection.
  * SPDX-License-Identifier: MIT
  *
  * Before this phase a JoltC_PhysicsMaterial could be created and connected to nothing: no shape

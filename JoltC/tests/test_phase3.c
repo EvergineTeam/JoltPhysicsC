@@ -1,4 +1,4 @@
-/* JoltC Test Suite — phase 3: determinism and state.
+/* JoltC Test Suite -- phase 3: determinism and state.
  * SPDX-License-Identifier: MIT
  *
  * The contract under test is rollback: save, keep simulating, restore, re-simulate the same steps

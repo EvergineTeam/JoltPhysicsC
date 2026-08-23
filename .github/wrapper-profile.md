@@ -27,7 +27,7 @@ and the build breaks somewhere unrelated to the change that caused it.
 **Numeric suffixes**: `_Create`, `_Create2`, `_Create3`. If upstream adds an overload, the
 next free number is the answer here.
 
-(CesiumC does the opposite — semantic suffixes like `_create_from_url`. Do not carry a habit
+(CesiumC does the opposite -- semantic suffixes like `_create_from_url`. Do not carry a habit
 across from one profile to the other.)
 
 ## Paths
@@ -52,7 +52,7 @@ target is what a human uses when deciding whether to accept the report.
 ## Applying a bump
 
 One edit: move the `JoltPhysics/` submodule to the new tag. No dependency manifest, no
-baseline, no list of upstream libraries — this repository has no external dependencies and
+baseline, no list of upstream libraries -- this repository has no external dependencies and
 includes `Jolt/Jolt.cmake` directly.
 
 Two things that follow from including `Jolt.cmake` rather than upstream's `CMakeLists.txt`:
@@ -75,11 +75,11 @@ ctest --test-dir JoltC/build --build-config Release --output-on-failure --no-tes
 ```
 
 Eleven suites, hand-rolled C, no framework. Non-zero exit on any failure, and no results
-that mean "skipped" — every test either runs or the run failed.
+that mean "skipped" -- every test either runs or the run failed.
 
 The libraries are built for ten platforms by `.github/workflows/build-joltc.yml`, which runs
 on every push and pull request. **Tests run on the three whose binaries the runner can
-execute** — `linux-x64`, `win-x64`, `osx-arm64`. The other seven are cross-compiled and only
+execute** -- `linux-x64`, `win-x64`, `osx-arm64`. The other seven are cross-compiled and only
 build, so a green run proves the desktop subset behaves and the rest compiles.
 
 A pull request gets all ten legs automatically. A branch without a pull request gets nothing:
@@ -168,7 +168,7 @@ text). `DebugRendererSimple` reduces everything Jolt draws to those primitives; 
 triangle callback degrades to wireframe through the line one. `DrawBodies` takes the full
 `BodyManager::DrawSettings` mirror (soft body structure included), and `DrawConstraints` /
 `DrawConstraintLimits` draw what no engine-side reimplementation can see. This required pinning
-`DEBUG_RENDERER_IN_DISTRIBUTION ON` in `JoltC/CMakeLists.txt` — the win-x64 release zip grows
+`DEBUG_RENDERER_IN_DISTRIBUTION ON` in `JoltC/CMakeLists.txt` -- the win-x64 release zip grows
 about 0.1 MB (~15%) for it, paid on purpose: a distribution build without it would export
 functions that silently draw nothing.
 

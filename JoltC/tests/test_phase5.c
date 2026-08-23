@@ -1,4 +1,4 @@
-/* JoltC Test Suite — phase 5: character and system to one hundred percent.
+/* JoltC Test Suite -- phase 5: character and system to one hundred percent.
  * SPDX-License-Identifier: MIT
  *
  * The complete character contact listener with its full payload and the character-versus-character

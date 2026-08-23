@@ -1,4 +1,4 @@
-/* JoltC Test Suite — math.h round-trips, identities and known-answer arithmetic
+/* JoltC Test Suite -- math.h round-trips, identities and known-answer arithmetic
  * SPDX-License-Identifier: MIT
  *
  * Companion to test_math.c. That file establishes that the math entry points are
@@ -6,7 +6,7 @@
  * produces: code that compiles and is semantically wrong. Two rules follow from
  * that, and every test below obeys them:
  *
- *   1. Every test value is asymmetric — no (1,1,1), no lone (0,0,1). A swapped
+ *   1. Every test value is asymmetric -- no (1,1,1), no lone (0,0,1). A swapped
  *      component in a converter (the documented toJphVec3 x/y hazard) has to
  *      change a number this file asserts, or the test is worthless.
  *   2. Every expected value is computed by hand and the derivation is stated in
@@ -42,8 +42,8 @@ static const JoltC_RVec3 kRTrans = { -1.25f, 0.5f,  2.0f  };
 static const JoltC_Vec3  kScale  = {  1.5f, -2.25f, 3.75f };
 
 /* Unit quaternion, exactly: 0.04 + 0.16 + 0.16 + 0.64 = 1.
- * Its axis is (0.2,-0.4,0.4)/0.6 = (1/3, -2/3, 2/3) — the vector part has
- * length exactly 0.6 — and its angle is 2*acos(0.8) = 2*atan(0.75) = 1.2870022. */
+ * Its axis is (0.2,-0.4,0.4)/0.6 = (1/3, -2/3, 2/3) -- the vector part has
+ * length exactly 0.6 -- and its angle is 2*acos(0.8) = 2*atan(0.75) = 1.2870022. */
 static const JoltC_Quat  kQuatA  = { 0.2f, -0.4f, 0.4f, 0.8f };
 
 /* Second unit quaternion: 0.25*4 = 1. Axis (1,1,-1)/sqrt(3), angle 2*pi/3. */
@@ -167,14 +167,14 @@ void run_math_roundtrip_tests(void)
         TEST_ASSERT_FLOAT_EQ(JoltC_Math_Cos(0.35f),  0.93937271f, 0.0001f, "cos(0.35)");
         TEST_ASSERT_FLOAT_EQ(JoltC_Math_Sin(-0.4f), -0.38941834f, 0.0001f, "sin(-0.4)");
         TEST_ASSERT_FLOAT_EQ(JoltC_Math_Cos(-0.4f),  0.92106099f, 0.0001f, "cos(-0.4)");
-        /* Cos is even, Sin is odd — catches the two being swapped. */
+        /* Cos is even, Sin is odd -- catches the two being swapped. */
         TEST_ASSERT_FLOAT_EQ(JoltC_Math_Cos(0.4f), JoltC_Math_Cos(-0.4f), 0.0001f, "cos even");
         TEST_ASSERT_FLOAT_EQ(JoltC_Math_Sin(0.4f), -JoltC_Math_Sin(-0.4f), 0.0001f, "sin odd");
     }
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  Vec3 — magnitudes                                               */
+    /*  Vec3 - magnitudes                                               */
     /* ---------------------------------------------------------------- */
 
     /* |(1.5,-2.25,3.75)|^2 = 2.25 + 5.0625 + 14.0625 = 21.375 (exact),
@@ -202,7 +202,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* (0.2,-0.4,0.4) has length exactly 0.6, so the normalized axis is
-     * exactly (1/3, -2/3, 2/3) — no rounding in the expectation. */
+     * exactly (1/3, -2/3, 2/3) -- no rounding in the expectation. */
     TEST_BEGIN("Vec3 Normalize == Normalized (exact axis)");
     {
         JoltC_Vec3 v = { 0.2f, -0.4f, 0.4f };
@@ -215,7 +215,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  Vec3 — component-wise arithmetic                                */
+    /*  Vec3 - component-wise arithmetic                                */
     /* ---------------------------------------------------------------- */
 
     TEST_BEGIN("Vec3 Negate / Abs with mixed signs");
@@ -262,7 +262,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  Vec3 — products                                                 */
+    /*  Vec3 - products                                                 */
     /* ---------------------------------------------------------------- */
 
     /* a x b with a=(1.5,-2.25,3.75), b=(-0.5,2,1.25):
@@ -314,7 +314,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  Vec3 — predicates and edge cases                                */
+    /*  Vec3 - predicates and edge cases                                */
     /* ---------------------------------------------------------------- */
 
     /* IsNearZero's parameter is a *squared* distance (maxDistSq).
@@ -343,7 +343,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  Quat — construction from Euler angles                           */
+    /*  Quat - construction from Euler angles                           */
     /* ---------------------------------------------------------------- */
 
     /* A single-axis Euler rotation is convention-independent: rotating by
@@ -396,13 +396,13 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  Quat — axis/angle                                               */
+    /*  Quat - axis/angle                                               */
     /* ---------------------------------------------------------------- */
 
     /* kQuatA's vector part has length exactly 0.6 and w = 0.8, so the axis is
      * exactly (1/3,-2/3,2/3) and the angle is 2*atan(0.6/0.8) = 1.2870022.
      * Second half: build a quaternion from a known axis and angle and read them
-     * back out — a genuine compose/decompose round trip. */
+     * back out -- a genuine compose/decompose round trip. */
     TEST_BEGIN("Quat GetAxisAngle known answer and round trip");
     {
         JoltC_Vec3 axis;
@@ -442,7 +442,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  Quat — rotating vectors                                         */
+    /*  Quat - rotating vectors                                         */
     /* ---------------------------------------------------------------- */
 
     /* R (see kRotA) applied to a = (1.5,-2.25,3.75):
@@ -481,7 +481,7 @@ void run_math_roundtrip_tests(void)
     }
     TEST_END();
 
-    /* Rotating the basis vectors by kQuatA must reproduce the columns of R —
+    /* Rotating the basis vectors by kQuatA must reproduce the columns of R --
      * the same numbers JoltC_Mat44_Rotation is asserted against below. If the
      * quaternion and matrix paths ever disagree, one of these two tests moves. */
     TEST_BEGIN("Quat RotateAxisX/Y/Z are the columns of R");
@@ -497,7 +497,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  Quat — algebra                                                  */
+    /*  Quat - algebra                                                  */
     /* ---------------------------------------------------------------- */
 
     /* Conjugate negates the vector part only. For a unit quaternion the
@@ -548,7 +548,7 @@ void run_math_roundtrip_tests(void)
      *   z = w1z2 + x1y2 - y1x2 + z1w2 = -0.40 + 0.10 + 0.20 + 0.20 = 0.1
      *   w = w1w2 - x1x2 - y1y2 - z1z2 = 0.40 - 0.10 + 0.20 + 0.20 = 0.7
      * The result is unit (0.25+0.25+0.01+0.49 = 1), which is the check that the
-     * hand arithmetic above is right — the product of two unit quaternions has
+     * hand arithmetic above is right -- the product of two unit quaternions has
      * to be unit. */
     TEST_BEGIN("Quat Multiply known Hamilton product");
     {
@@ -570,7 +570,7 @@ void run_math_roundtrip_tests(void)
 
     /* Ordering check: (A*B) applied to a vector must equal A applied to
      * (B applied to the vector). This is what breaks if the operands of the
-     * product are ever swapped during a repair — the component values above
+     * product are ever swapped during a repair -- the component values above
      * would still look plausible.
      *
      * The expected vector is hand-computed rather than merely compared between
@@ -601,7 +601,7 @@ void run_math_roundtrip_tests(void)
     }
     TEST_END();
 
-    /* Rotations about a common axis add their angles and commute — true under
+    /* Rotations about a common axis add their angles and commute -- true under
      * any multiplication-order convention, so this pins down the product
      * formula itself rather than the operand order. */
     TEST_BEGIN("Quat Multiply about one axis adds angles");
@@ -639,7 +639,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  Quat — swing / twist / perpendicular                            */
+    /*  Quat - swing / twist / perpendicular                            */
     /* ---------------------------------------------------------------- */
 
     /* A rotation entirely about some axis is its own twist about that axis. */
@@ -662,8 +662,8 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* GetSwingTwist splits around X: the twist rotates only about X and the
-     * swing has no X component. For a pure X rotation the split is degenerate —
-     * all twist, no swing — which is the case with a hand-known answer. */
+     * swing has no X component. For a pure X rotation the split is degenerate --
+     * all twist, no swing -- which is the case with a hand-known answer. */
     TEST_BEGIN("Quat GetSwingTwist structure");
     {
         JoltC_Vec3 euler_x = { 0.6f, 0.0f, 0.0f };
@@ -705,7 +705,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  Quat — FromTo                                                   */
+    /*  Quat - FromTo                                                   */
     /* ---------------------------------------------------------------- */
 
     /* sFromTo(a,b) must carry a onto the direction of b. Rotation preserves
@@ -747,7 +747,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  Mat44 — construction                                            */
+    /*  Mat44 - construction                                            */
     /* ---------------------------------------------------------------- */
 
     TEST_BEGIN("Mat44 Zero is all sixteen zeros");
@@ -877,7 +877,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  Mat44 — multiplication                                          */
+    /*  Mat44 - multiplication                                          */
     /* ---------------------------------------------------------------- */
 
     /* Ordering matters and the two orders differ in the translation column:
@@ -1003,7 +1003,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  Mat44 — transpose and inverse                                   */
+    /*  Mat44 - transpose and inverse                                   */
     /* ---------------------------------------------------------------- */
 
     /* Transposing R turns its columns into rows; for a rotation that is also
@@ -1073,9 +1073,9 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* Three routes to the same inverse must agree:
-     *   Mat44_InverseRotationTranslation(q, t)   — builds it from q and t
-     *   Mat44_Inversed(RotationTranslation(q,t)) — general inverse
-     *   RMat44_InversedRotationTranslation(M)    — the R-flavoured shortcut
+     *   Mat44_InverseRotationTranslation(q, t)   -- builds it from q and t
+     *   Mat44_Inversed(RotationTranslation(q,t)) -- general inverse
+     *   RMat44_InversedRotationTranslation(M)    -- the R-flavoured shortcut
      * Note the two similarly named entry points do different things:
      * Mat44_InverseRotationTranslation takes a quaternion and a translation,
      * while Mat4_InverseRotationTranslation (below) inverts a whole matrix. */
@@ -1093,7 +1093,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  RayCast helpers — Vec3 and RVec3 paths                          */
+    /*  RayCast helpers - Vec3 and RVec3 paths                          */
     /* ---------------------------------------------------------------- */
 
     /* origin + 0.4 * direction
@@ -1131,7 +1131,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  RMat44 — the RVec3-flavoured matrix constructors                */
+    /*  RMat44 - the RVec3-flavoured matrix constructors                */
     /* ---------------------------------------------------------------- */
 
     TEST_BEGIN("RMat44 Identity and Zero");
@@ -1149,7 +1149,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* The RVec3 translation must land in column 3 in the same order as the
-     * Vec3 version — this is exactly where a mixed-up converter would show. */
+     * Vec3 version -- this is exactly where a mixed-up converter would show. */
     TEST_BEGIN("RMat44 Translation known entries");
     {
         const JoltC_Mat44 expected = { {
@@ -1214,7 +1214,7 @@ void run_math_roundtrip_tests(void)
     TEST_END();
 
     /* ---------------------------------------------------------------- */
-    /*  Mat4 / RMat4 — the by-value aliases                             */
+    /*  Mat4 / RMat4 - the by-value aliases                             */
     /* ---------------------------------------------------------------- */
 
     /* These are separate entry points that pass and return whole structs. A
@@ -1396,7 +1396,7 @@ void run_math_roundtrip_tests(void)
      *   Ixx = 0.5*(6.25+16)  = 11.125
      *   Iyy = 0.5*(2.25+16)  =  9.125
      *   Izz = 0.5*(2.25+6.25)=  4.25
-     * so recovering the box size from that diagonal must give (1.5, 2.5, 4) —
+     * so recovering the box size from that diagonal must give (1.5, 2.5, 4) --
      * three different numbers, so a component swap is visible. */
     TEST_BEGIN("MassProperties equivalent solid box size");
     {
