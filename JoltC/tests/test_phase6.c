@@ -246,4 +246,48 @@ void run_phase6_tests(void)
         teardown_physics_context(&ctx);
     }
     TEST_END();
+
+    /* test_a_shape_draws_where_it_is_told */
+    TEST_BEGIN("A shape draws where it is told, in the colour it is given");
+    {
+        JoltC_Vec3 halfExtent = { 0.5f, 0.5f, 0.5f };
+        const JoltC_Shape* box = JoltC_BoxShape_Create(halfExtent, 0.0f);
+        TEST_ASSERT_NOT_NULL(box, "box shape created");
+
+        JoltC_DebugRenderer* collector = JoltC_DebugRenderer_CreateCollector();
+        const JoltC_DebugVertex* vertices = NULL;
+
+        /* At the origin. */
+        JoltC_Mat44 here;
+        JoltC_Mat44_Identity(&here);
+        JoltC_Vec3 one = { 1.0f, 1.0f, 1.0f };
+        JoltC_Shape_Draw(box, collector, &here, one, 0xFF00FF00, JOLTC_FALSE, JOLTC_TRUE);
+
+        uint32_t atOrigin = JoltC_DebugRenderer_TakeVertices(collector, &vertices);
+        TEST_ASSERT(atOrigin > 0, "the box drew");
+
+        /* The colour asked for, multiplied by the white the geometry carries. Jolt's multiply is a shift
+         * by eight rather than a divide by 255, so a saturated channel comes back as 254: assert the
+         * channels rather than the word, with red in the lowest byte. */
+        uint32_t drawn = vertices[0].color;
+        TEST_ASSERT((drawn & 0xFF) == 0, "no red in what was drawn");
+        TEST_ASSERT(((drawn >> 8) & 0xFF) > 200, "the green it was given");
+        TEST_ASSERT(((drawn >> 16) & 0xFF) == 0, "no blue in what was drawn");
+
+        float firstX = vertices[0].x;
+
+        /* Ten metres along x, which is where a caller drawing an interpolated pose would want it. */
+        JoltC_Mat44 moved;
+        JoltC_Vec3 tenAlongX = { 10.0f, 0.0f, 0.0f };
+        JoltC_Mat44_Translation(&moved, &tenAlongX);
+        JoltC_Shape_Draw(box, collector, &moved, one, 0xFF00FF00, JOLTC_FALSE, JOLTC_TRUE);
+
+        uint32_t movedCount = JoltC_DebugRenderer_TakeVertices(collector, &vertices);
+        TEST_ASSERT(movedCount == atOrigin, "the same box is the same number of lines wherever it is");
+        TEST_ASSERT_FLOAT_EQ(vertices[0].x, firstX + 10.0f, 0.001f, "and it arrived ten metres along x");
+
+        JoltC_DebugRenderer_Destroy(collector);
+        JoltC_Shape_Release(box);
+    }
+    TEST_END();
 }

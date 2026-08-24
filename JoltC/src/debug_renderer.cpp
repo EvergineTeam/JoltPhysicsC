@@ -6,6 +6,7 @@
 #include <Jolt/Renderer/DebugRendererSimple.h>
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Body/BodyManager.h>
+#include <Jolt/Physics/Collision/Shape/Shape.h>
 
 #include <JoltC/debug_renderer.h>
 #include "internal.h"
@@ -228,6 +229,32 @@ JOLTC_API void JoltC_PhysicsSystem_DrawConstraintLimits(JoltC_PhysicsSystem* sys
     JOLTC_TRY_BEGIN
     system->ptr->DrawConstraintLimits(asRenderer(renderer));
     JOLTC_TRY_END
+}
+
+JOLTC_API void JoltC_Shape_Draw(
+    const JoltC_Shape* shape,
+    JoltC_DebugRenderer* renderer,
+    const JoltC_Mat44* centerOfMassTransform,
+    JoltC_Vec3 scale,
+    uint32_t color,
+    JoltC_Bool useMaterialColors,
+    JoltC_Bool drawWireframe)
+{
+    if (!shape || !renderer || !centerOfMassTransform) return;
+    JOLTC_TRY_BEGIN
+    reinterpret_cast<const Shape*>(shape)->Draw(
+        asRenderer(renderer),
+        RMat44(toJphMat44(*centerOfMassTransform)),
+        toJphVec3(scale),
+        Color(color),
+        useMaterialColors != 0,
+        drawWireframe != 0);
+    JOLTC_TRY_END
+}
+
+JOLTC_API uint32_t JoltC_Color_GetDistinctColor(uint32_t index)
+{
+    return Color::sGetDistinctColor((int)index).GetUInt32();
 }
 
 } /* extern "C" */
