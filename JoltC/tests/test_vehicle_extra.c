@@ -851,6 +851,7 @@ void run_vehicle_extra_tests(void)
         t.differentialRatio = -999.0f;
         t.wheels = (const uint32_t*)&t;
         t.wheelsCount = 7;
+        t.drivenWheel = 12345u;
 
         JoltC_VehicleTrackSettings_Init(&t);
 
@@ -861,8 +862,9 @@ void run_vehicle_extra_tests(void)
         /* The wrapper owns these two, unlike the rest. */
         TEST_ASSERT(t.wheels == NULL, "default track wheels NULL");
         TEST_ASSERT(t.wheelsCount == 0u, "default track wheelsCount == 0");
-        /* drivenWheel is deliberately not asserted: upstream declares it with no
-         * initialiser, so Init copies whatever the default constructor left there. */
+        /* Zero rather than whatever upstream's default constructor left on the stack: it declares
+         * drivenWheel with no initialiser, and that value goes on to index the wheel array. */
+        TEST_ASSERT(t.drivenWheel == 0u, "default track drivenWheel == 0");
 
         JoltC_VehicleTrackSettings_Init(NULL);
     }
@@ -1437,6 +1439,78 @@ void run_vehicle_extra_tests(void)
         JoltC_VehicleTransmissionSettings_Destroy(mine);
         JoltC_VehicleControllerSettings_Destroy((JoltC_VehicleControllerSettings*)s);
         JoltC_VehicleControllerSettings_Destroy(NULL);
+    }
+    TEST_END();
+
+    /* Without these two the tracks are unreachable from C, and a tracked vehicle that reaches the
+     * solver with empty wheel lists reads GetTracks()[-1]: every wheel keeps the -1 track index the
+     * controller only overwrites while walking those lists. */
+    TEST_BEGIN("TrackedVehicleControllerSettings tracks round-trip");
+    {
+        JoltC_TrackedVehicleControllerSettings* s = JoltC_TrackedVehicleControllerSettings_Create();
+        const uint32_t left_wheels[3] = { 0u, 2u, 4u };
+        const uint32_t right_wheels[2] = { 1u, 3u };
+        JoltC_VehicleTrackSettings t;
+        JoltC_VehicleTrackSettings got;
+
+        TEST_ASSERT_NOT_NULL(s, "tracked settings not null");
+
+        /* A track arrives empty, which is exactly the shape that crashes the solver. */
+        JoltC_TrackedVehicleControllerSettings_GetTrack(s, JOLTC_TRACK_SIDE_LEFT, &got);
+        TEST_ASSERT(got.wheelsCount == 0u, "left track starts with no wheels");
+
+        JoltC_VehicleTrackSettings_Init(&t);
+        t.drivenWheel = 4u;
+        t.wheels = left_wheels;
+        t.wheelsCount = 3u;
+        t.inertia = 12.5f;
+        t.angularDamping = 0.25f;
+        t.maxBrakeTorque = 9000.0f;
+        t.differentialRatio = 5.5f;
+        JoltC_TrackedVehicleControllerSettings_SetTrack(s, JOLTC_TRACK_SIDE_LEFT, &t);
+
+        JoltC_VehicleTrackSettings_Init(&t);
+        t.drivenWheel = 3u;
+        t.wheels = right_wheels;
+        t.wheelsCount = 2u;
+        JoltC_TrackedVehicleControllerSettings_SetTrack(s, JOLTC_TRACK_SIDE_RIGHT, &t);
+
+        JoltC_TrackedVehicleControllerSettings_GetTrack(s, JOLTC_TRACK_SIDE_LEFT, &got);
+        TEST_ASSERT(got.drivenWheel == 4u, "left drivenWheel round-trips");
+        TEST_ASSERT(got.wheelsCount == 3u, "left wheelsCount round-trips");
+        TEST_ASSERT_NOT_NULL(got.wheels, "left wheels pointer not null");
+        /* Copied on the way in, not aliased: the caller's array is its own. */
+        TEST_ASSERT(got.wheels != left_wheels, "left wheels were copied, not borrowed from the caller");
+        TEST_ASSERT(got.wheels[0] == 0u && got.wheels[1] == 2u && got.wheels[2] == 4u,
+                    "left wheel indices round-trip in order");
+        TEST_ASSERT_FLOAT_EQ(got.inertia, 12.5f, 1e-4f, "left inertia round-trips");
+        TEST_ASSERT_FLOAT_EQ(got.angularDamping, 0.25f, 1e-6f, "left angularDamping round-trips");
+        TEST_ASSERT_FLOAT_EQ(got.maxBrakeTorque, 9000.0f, 1e-1f, "left maxBrakeTorque round-trips");
+        TEST_ASSERT_FLOAT_EQ(got.differentialRatio, 5.5f, 1e-5f, "left differentialRatio round-trips");
+
+        /* The two sides are separate storage, not one track written twice. */
+        JoltC_TrackedVehicleControllerSettings_GetTrack(s, JOLTC_TRACK_SIDE_RIGHT, &got);
+        TEST_ASSERT(got.drivenWheel == 3u, "right drivenWheel round-trips");
+        TEST_ASSERT(got.wheelsCount == 2u, "right wheelsCount round-trips");
+        TEST_ASSERT(got.wheels[0] == 1u && got.wheels[1] == 3u, "right wheel indices round-trip");
+        TEST_ASSERT_FLOAT_EQ(got.inertia, 10.0f, 1e-4f, "right track kept the default inertia");
+
+        /* Guards. A count with no array is refused rather than dereferenced. */
+        JoltC_VehicleTrackSettings_Init(&t);
+        t.wheels = NULL;
+        t.wheelsCount = 4u;
+        JoltC_TrackedVehicleControllerSettings_SetTrack(s, JOLTC_TRACK_SIDE_RIGHT, &t);
+        JoltC_TrackedVehicleControllerSettings_SetTrack(s, (JoltC_TrackSide)7, &t);
+        JoltC_TrackedVehicleControllerSettings_SetTrack(s, JOLTC_TRACK_SIDE_LEFT, NULL);
+        JoltC_TrackedVehicleControllerSettings_SetTrack(NULL, JOLTC_TRACK_SIDE_LEFT, &t);
+        JoltC_TrackedVehicleControllerSettings_GetTrack(NULL, JOLTC_TRACK_SIDE_LEFT, &got);
+        JoltC_TrackedVehicleControllerSettings_GetTrack(s, JOLTC_TRACK_SIDE_LEFT, NULL);
+        JoltC_TrackedVehicleControllerSettings_GetTrack(s, (JoltC_TrackSide)7, &got);
+
+        JoltC_TrackedVehicleControllerSettings_GetTrack(s, JOLTC_TRACK_SIDE_RIGHT, &got);
+        TEST_ASSERT(got.wheelsCount == 2u, "guarded calls left the right track alone");
+
+        JoltC_VehicleControllerSettings_Destroy((JoltC_VehicleControllerSettings*)s);
     }
     TEST_END();
 

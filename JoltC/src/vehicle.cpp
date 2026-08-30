@@ -115,6 +115,34 @@ static void fromJphDiffSettings(const VehicleDifferentialSettings& src, JoltC_Ve
     dst->engineTorqueRatio = src.mEngineTorqueRatio;
 }
 
+static VehicleTrackSettings toJphTrackSettings(const JoltC_VehicleTrackSettings& s) {
+    VehicleTrackSettings out;
+    out.mDrivenWheel = s.drivenWheel;
+    out.mWheels.clear();
+    out.mWheels.reserve(s.wheelsCount);
+    /* Copied, not borrowed: the caller keeps ownership of its array, and the settings outlive the call. */
+    for (uint32_t i = 0; i < s.wheelsCount; i++)
+        out.mWheels.push_back(s.wheels[i]);
+    out.mInertia = s.inertia;
+    out.mAngularDamping = s.angularDamping;
+    out.mMaxBrakeTorque = s.maxBrakeTorque;
+    out.mDifferentialRatio = s.differentialRatio;
+    return out;
+}
+
+static void fromJphTrackSettings(const VehicleTrackSettings& src, JoltC_VehicleTrackSettings* dst) {
+    dst->drivenWheel = src.mDrivenWheel;
+    /* Borrowed, which is what the struct's const pointer says: it points into the settings object and
+     * stays good until that track is set again. The alternative, a static thread_local copy, is what
+     * GetTransmission had to do because it returns a handle rather than filling one out. */
+    dst->wheels = src.mWheels.empty() ? nullptr : src.mWheels.data();
+    dst->wheelsCount = (uint32_t)src.mWheels.size();
+    dst->inertia = src.mInertia;
+    dst->angularDamping = src.mAngularDamping;
+    dst->maxBrakeTorque = src.mMaxBrakeTorque;
+    dst->differentialRatio = src.mDifferentialRatio;
+}
+
 extern "C" {
 
 /* ========================================================================== */
@@ -651,6 +679,19 @@ JOLTC_API void JoltC_TrackedVehicleControllerSettings_SetTransmission(JoltC_Trac
     if (!s || !value) return;
     asTVCS(s)->mTransmission = value->settings;
 }
+JOLTC_API void JoltC_TrackedVehicleControllerSettings_SetTrack(JoltC_TrackedVehicleControllerSettings* s, JoltC_TrackSide side, const JoltC_VehicleTrackSettings* value) {
+    if (!s || !value) return;
+    if (side != JOLTC_TRACK_SIDE_LEFT && side != JOLTC_TRACK_SIDE_RIGHT) return;
+    /* A count with no array is the one mistake worth refusing rather than swallowing: it would read
+     * through a null pointer instead of quietly doing nothing. */
+    if (value->wheelsCount > 0 && !value->wheels) return;
+    asTVCS(s)->mTracks[(int)side] = toJphTrackSettings(*value);
+}
+JOLTC_API void JoltC_TrackedVehicleControllerSettings_GetTrack(const JoltC_TrackedVehicleControllerSettings* s, JoltC_TrackSide side, JoltC_VehicleTrackSettings* result) {
+    if (!s || !result) return;
+    if (side != JOLTC_TRACK_SIDE_LEFT && side != JOLTC_TRACK_SIDE_RIGHT) return;
+    fromJphTrackSettings(asTVCS(s)->mTracks[(int)side], result);
+}
 
 /* ========================================================================== */
 /*  WheeledVehicleController (runtime)                                        */
@@ -862,7 +903,9 @@ JOLTC_API void JoltC_VehicleAntiRollBar_Init(JoltC_VehicleAntiRollBar* bar) {
 JOLTC_API void JoltC_VehicleTrackSettings_Init(JoltC_VehicleTrackSettings* s) {
     if (!s) return;
     VehicleTrackSettings defaults;
-    s->drivenWheel = defaults.mDrivenWheel;
+    /* Not defaults.mDrivenWheel: upstream declares it with no initialiser, so copying it hands the
+     * caller whatever was on the stack -- and that value goes on to index the wheel array. */
+    s->drivenWheel = 0;
     s->wheels = nullptr;
     s->wheelsCount = 0;
     s->inertia = defaults.mInertia;
