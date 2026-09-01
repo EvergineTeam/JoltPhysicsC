@@ -91,6 +91,23 @@ set_target_properties(JoltC PROPERTIES
     VISIBILITY_INLINES_HIDDEN ON
 )
 
+# Google Play requires 64-bit native libraries to support 16 KB memory pages, and refuses
+# updates that do not from 1 February 2027. The shipped android-arm64 libJoltC.so already
+# satisfies it, but only because the workflow passes ANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON
+# and the runner's NDK understands it. Neither half is guaranteed: the NDK is not pinned
+# anywhere and comes from the runner image, and on an NDK older than r27 that option is an
+# unknown cache variable, ignored without a word. The binary would go back to 4 KB and
+# every leg would stay green.
+#
+# The README's manual build does not pass the option at all, so building this by hand
+# already produces a library that could not be published.
+#
+# Only JoltC needs it: Jolt is STATIC and linked in, and an archive has no program headers
+# to align. Guarded on the shared branch because JOLTC_STATIC produces an archive here too.
+if(ANDROID AND NOT JOLTC_STATIC)
+    target_link_options(JoltC PRIVATE "-Wl,-z,max-page-size=16384")
+endif()
+
 # Include directories
 target_include_directories(JoltC
     PUBLIC
