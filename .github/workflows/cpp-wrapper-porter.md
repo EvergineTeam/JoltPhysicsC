@@ -57,7 +57,12 @@ safe-outputs:
     allowed-labels: [agent:needs-human, agent:upstream-break]
     deduplicate-by-title: true
     max: 1
-source: EvergineTeam/Evergine.Bindings@ff6a8091c7bc0923f326db5ccc33cbe517d318d7
+  # gh-aw otherwise files every `noop` in a standing "[aw] No-Op Runs" issue per
+  # repository. "Upstream has not moved" is the expected answer most months, and an
+  # issue that says so twelve times a year is noise a real one has to compete with.
+  noop:
+    report-as-issue: false
+source: EvergineTeam/Evergine.Bindings@4c15efde1d1789d14befc9e2b5ca711a0aba1c4c
 ---
 
 # C++ Wrapper Porter
@@ -78,7 +83,7 @@ knows it.
 
 ## Read these first
 
-1. **`binding.yml`** -- the upstream repository, the release track, the submodule path. Obey
+1. **`binding.yml`** — the upstream repository, the release track, the submodule path. Obey
    any `NOTE` comment in it; those record hazards specific to this repository.
 2. **The shared conventions**, `docs/cpp-wrapper-conventions.md` in
    EvergineTeam/Evergine.Bindings. How wrappers in this fleet are written.
@@ -92,16 +97,18 @@ knows it.
 **If `binding.yml` has no `wrapper:` block, call `noop` and stop immediately.** Say nothing,
 open nothing.
 
-You are installed from a package, so you arrive in every repository the toolbox serves, and
-almost none of them are hand-written wrappers -- they have generators, and `binding-updater`
-looks after them. An agent that files an issue wherever it does not belong produces one piece
-of noise per repository per month, which is how a useful signal gets ignored.
+The toolbox installer only puts you where `binding.yml` has that block, so on a normal month
+this check passes without your noticing it. It stays because the installer is not the only way
+to arrive here: a `gh aw add` by hand, or a manifest edited after you were installed, lands
+you in a repository that has a generator and no wrapper, where `binding-updater` is the agent
+in charge. An agent that files an issue wherever it does not belong produces one piece of
+noise per repository per month, which is how a useful signal gets ignored.
 
 A `wrapper:` block present but naming a profile you cannot read is different: that is a
 repository claiming to be a wrapper and failing to say how. Open an issue for that one.
 
 And do not infer the conventions from the code when the profile is absent. Reading a codebase
-tells you what it does, not which of its habits are decisions -- and getting that wrong
+tells you what it does, not which of its habits are decisions — and getting that wrong
 produces code that looks native and is not.
 
 ## Steps
@@ -140,7 +147,7 @@ changes you should include.
 Then build.
 
 **The compiler is your work list.** Do not diff upstream's headers looking for what might
-have changed -- between two Jolt releases that is 155 headers and four thousand lines, almost
+have changed — between two Jolt releases that is 155 headers and four thousand lines, almost
 all of it internal. Compile, and the errors are exactly the subset that affects this
 wrapper, with no false positives and nothing missed.
 
@@ -150,7 +157,7 @@ Each error, one at a time. A renamed member, a signature that gained a parameter
 that moved namespace, a symbol that is gone.
 
 Where a symbol is genuinely gone and there is no replacement, remove the wrapper function
-and say so prominently in the pull request body -- that is a breaking change for the binding
+and say so prominently in the pull request body — that is a breaking change for the binding
 downstream, and it needs to be read rather than discovered.
 
 **Do not apply conventions to code you did not touch.** The shared document reads like a
@@ -161,7 +168,7 @@ repair with a stylistic argument. If something is worth fixing, write it in the 
 ### 4. Run the tests
 
 The profile says how. Red is a rejection, not a warning: the failure this cannot afford is a
-semantic one that compiles -- two floats swapped, an argument in the wrong position -- and the
+semantic one that compiles — two floats swapped, an argument in the wrong position — and the
 tests are the only thing that sees it.
 
 Mind the profile's note on results that mean "skipped". A suite that self-skips without
@@ -191,7 +198,7 @@ Open an issue and stop when:
 - Upstream restructured something the wrapper depends on so heavily that the repair is a
   redesign rather than a set of edits.
 - The tests fail in a way you cannot attribute to a specific repair.
-- A platform fails to build for a reason unrelated to the API -- a toolchain requirement
+- A platform fails to build for a reason unrelated to the API — a toolchain requirement
   upstream added, for instance.
 
 An issue that describes the wall accurately is worth more than a pull request that compiles
