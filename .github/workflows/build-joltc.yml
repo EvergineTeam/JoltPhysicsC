@@ -1,8 +1,8 @@
 name: Build JoltC Libraries
 
-# Runs on every change, not only when somebody remembers to dispatch it. Ten legs is not
+# Runs on every change, not only when somebody remembers to dispatch it. Eleven legs is not
 # cheap, but this repository is where a JoltPhysics bump lands, and a bump that compiles on
-# three platforms and fails on the other seven is the normal outcome of a bump -- knowing
+# three platforms and fails on the other eight is the normal outcome of a bump -- knowing
 # that at pull-request time is the entire point.
 on:
   push:
@@ -12,7 +12,7 @@ on:
     inputs:
       release-tag:
         description: >-
-          Publish a release at this tag with the ten libraries attached, e.g. v5.5.0.
+          Publish a release at this tag with the eleven libraries attached, e.g. v5.5.0.
           Leave empty to build and test only. Use the JoltPhysics version this wrapper
           targets, so the tag answers "which Jolt is this?" without chasing a submodule.
         required: false
@@ -78,6 +78,15 @@ jobs:
             arch: arm64
             android-abi: arm64-v8a
             rid: android-arm64
+            run-tests: false
+          # x86_64 is what the Android emulator runs on a Windows or Linux host, so this is the
+          # library a developer's first deploy loads. No 32-bit x86: the emulator images that
+          # need it are gone, and no binding downstream asks for android-x86.
+          - os: ubuntu-latest
+            platform: android
+            arch: x64
+            android-abi: x86_64
+            rid: android-x64
             run-tests: false
           # ── iOS ───────────────────────────────────────────────────────
           - os: macos-latest
@@ -429,8 +438,8 @@ jobs:
           ls -la release/
 
           count=$(ls release/*.zip | wc -l)
-          if [ "$count" -ne 10 ]; then
-            echo "::error::expected 10 archives, got $count. A platform is missing."
+          if [ "$count" -ne 11 ]; then
+            echo "::error::expected 11 archives, got $count. A platform is missing."
             exit 1
           fi
 
@@ -442,7 +451,7 @@ jobs:
           body: |
             JoltC wrapping JoltPhysics `${{ inputs.release-tag }}`.
 
-            Ten libraries, one per runtime identifier. Each archive contains
+            Eleven libraries, one per runtime identifier. Each archive contains
             `runtimes/<rid>/native/`, so unpacking it over a .NET binding repository puts
             the library where the package expects it.
           files: release/*.zip
