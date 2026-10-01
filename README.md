@@ -65,7 +65,8 @@ cmake -S JoltC -B JoltC/build \
   -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
   -DANDROID_ABI=arm64-v8a \
   -DANDROID_PLATFORM=android-21 \
-  -DANDROID_STL=c++_static \n  -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON
+  -DANDROID_STL=c++_static \
+  -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON
 cmake --build JoltC/build
 ```
 
