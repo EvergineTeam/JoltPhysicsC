@@ -11,7 +11,7 @@ JoltPhysicsC wraps the Jolt Physics C++ API into a flat C API exposed as a share
 | Windows | x64, ARM64 | `JoltC.dll` | Shared |
 | Linux | x64, ARM64 | `libJoltC.so` | Shared |
 | macOS | ARM64 | `libJoltC.dylib` | Shared |
-| Android | arm, arm64 | `libJoltC.so` | Shared |
+| Android | arm, arm64, x64 | `libJoltC.so` | Shared |
 | iOS | ARM64 | `libJoltC.a` | Static |
 | iOS Simulator | ARM64 | `libJoltC.a` | Static |
 | WebAssembly | wasm | `libJoltC.a` | Static |
@@ -65,9 +65,13 @@ cmake -S JoltC -B JoltC/build \
   -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
   -DANDROID_ABI=arm64-v8a \
   -DANDROID_PLATFORM=android-21 \
-  -DANDROID_STL=c++_static
+  -DANDROID_STL=c++_static \
+  -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON
 cmake --build JoltC/build
 ```
+
+`ANDROID_ABI` takes `armeabi-v7a`, `arm64-v8a` or `x86_64`; the last one is what the Android
+emulator runs on a desktop host.
 
 **iOS**
 ```bash
